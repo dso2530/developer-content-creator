@@ -1,0 +1,47 @@
+# Maven
+target/
+
+# IntelliJ
+.idea/
+*.iml
+
+# VSCode
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# Logs
+*.log
+
+# Mac
+.DS_Store
+
+# Linux
+*~
+
+# Env
+.env
+.env.*
+
+# Docker
+docker-data/
+
+# Kubernetes
+*.kubeconfig
+
+# Generated
+generated/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Coverage
+coverage/
+jacoco.exec
+
+# OS
+Thumbs.db
