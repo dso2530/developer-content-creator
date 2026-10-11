@@ -15,4 +15,26 @@
 
     <artifactId>shared</artifactId>
 
+    <packaging>pom</packaging>
+
+    <modules>
+
+        <module>common</module>
+
+        <module>logging-starter</module>
+
+        <module>security-starter</module>
+
+        <module>observability-starter</module>
+
+        <module>messaging-starter</module>
+
+        <module>github-sdk</module>
+
+        <module>ai-client</module>
+
+        <module>test-support</module>
+
+    </modules>
+
 </project>

@@ -15,4 +15,18 @@
 
     <artifactId>publication-service</artifactId>
 
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.developercontentcreator</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+
+    </dependencies>
 </project>

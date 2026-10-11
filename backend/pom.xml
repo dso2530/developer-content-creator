@@ -10,12 +10,31 @@
         <groupId>io.developercontentcreator</groupId>
         <artifactId>developer-content-creator</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
+   
     <artifactId>backend</artifactId>
     <packaging>pom</packaging>
 
+    <dependencyManagement>
+        <dependencies>
+
+            <dependency>
+                <groupId>io.developercontentcreator</groupId>
+                <artifactId>bom</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
+        
+        <module>library-parent</module>
+        <module>service-parent</module>
         <module>shared</module>
         <module>repository-service</module>
         <module>ai-orchestrator</module>
