@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+MSG_FILE="$1"
+FIRST_LINE="$(head -n1 "$MSG_FILE")"
+
+# Laisser passer merges, reverts auto et fixup/squash
+if [[ "$FIRST_LINE" =~ ^(Merge|Revert|fixup!|squash!) ]]; then
+  exit 0
+fi
+
+TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert"
+REGEX="^(${TYPES})(\([a-z0-9._/-]+\))?(!)?: .{1,72}$"
+
+if ! [[ "$FIRST_LINE" =~ $REGEX ]]; then
+  cat >&2 <<EOF
+❌ Message de commit invalide (Conventional Commits).
+
+   Format : <type>(<scope>)?(!)?: <description>
+   Types  : ${TYPES//|/, }
+
+   Exemples :
+     feat(auth): ajoute la connexion OAuth
+     fix: corrige le calcul de TVA
+     feat!: supprime l'ancienne API
+
+   Reçu : "$FIRST_LINE"
+EOF
+  exit 1
+fi

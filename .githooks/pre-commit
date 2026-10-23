@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STAGED="$(git diff --cached --name-only --diff-filter=ACM)"
+[ -z "$STAGED" ] && exit 0
+
+# 1. Marqueurs de conflit oubliés
+if git diff --cached -U0 | grep -nE '^\+(<<<<<<<|>>>>>>>|=======$)' >/dev/null; then
+  echo "❌ Marqueurs de conflit détectés dans l'index." >&2
+  exit 1
+fi
+
+# 2. Espaces en fin de ligne
+git diff --cached --check || { echo "❌ Espaces superflus détectés." >&2; exit 1; }
+
+# 3. Fichiers sensibles
+if echo "$STAGED" | grep -E '(^|/)\.env($|\.)|\.pem$|id_rsa' >/dev/null; then
+  echo "❌ Fichier sensible dans l'index (.env, clé privée…)." >&2
+  exit 1
+fi
+
+# 4. Lint/format si disponible (adapter à votre stack)
+if [ -f package.json ] && command -v npx >/dev/null; then
+  npx --no-install lint-staged 2>/dev/null || true
+fi
+
+echo "✅ pre-commit OK"
