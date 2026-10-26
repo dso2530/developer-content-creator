@@ -8,6 +8,7 @@ import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -25,7 +26,8 @@ class RepositoryServiceApplicationTest {
     ResponseEntity<String> response =
         restTemplate.getForEntity("http://localhost:" + port + "/api/v1/health", String.class);
 
-    assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody()).contains("\"status\":\"UP\"");
   }
 }
