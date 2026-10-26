@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+      - develop
 
   pull_request:
     branches:
       - main
+      - develop
 
   workflow_dispatch:
 
@@ -40,18 +42,35 @@ jobs:
           java -version
           mvn -version
 
+      - name: Check Java formatting
+        run: mvn -B -ntp spotless:check
+
       - name: Build and verify all Maven modules
         run: mvn -B -ntp clean verify
 
-
-      - name: Upload JaCoCo reports
+      - name: Upload test and coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jacoco-reports
+          name: maven-test-and-coverage-reports
           path: |
             backend/**/target/site/jacoco/
             backend/**/target/surefire-reports/
             backend/**/target/failsafe-reports/
           if-no-files-found: warn
           retention-days: 14
+
+      - name: Add test results summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Maven CI results"
+            echo
+            echo "- Formatting: see the **Check Java formatting** step."
+            echo "- Build and tests: see the **Build and verify all Maven modules** step."
+            echo
+            echo "### Test reports"
+            echo
+            echo "Detailed Surefire, Failsafe and JaCoCo reports are available in the workflow artifacts when generated."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: repository-service
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dcc_repository}
+    username: ${DB_USERNAME:dcc_repository}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+
+server:
+  port: ${SERVER_PORT:8080}
