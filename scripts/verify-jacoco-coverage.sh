@@ -4,13 +4,13 @@ set -Eeuo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/backend"
-
+shopt -s globstar nullglob
 errors=0
 checked=0
 
 echo "=== Vérification des rapports JaCoCo ==="
 
-for classes_dir in "$BACKEND_DIR"/*/target/classes; do
+for classes_dir in "$BACKEND_DIR"/**/target/classes; do
   [[ -d "$classes_dir" ]] || continue
 
   module_dir="${classes_dir%/target/classes}"
