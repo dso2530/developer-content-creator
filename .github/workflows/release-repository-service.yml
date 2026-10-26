@@ -82,6 +82,9 @@ jobs:
           -pl backend/repository-service
           -am clean verify
 
+      - name: Verify JaCoCo reports
+        run: ./scripts/verify-jacoco-coverage.sh
+
       - name: Summarize release validation
         env:
           RELEASE_VERSION: ${{ steps.release.outputs.release_version }}

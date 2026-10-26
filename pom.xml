@@ -7,7 +7,7 @@
 
     <groupId>io.developercontentcreator</groupId>
     <artifactId>developer-content-creator</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -25,6 +25,7 @@
         <maven-surefire.version>3.5.3</maven-surefire.version>
         <maven-failsafe.version>3.5.3</maven-failsafe.version>
         <avro.version>1.12.1</avro.version>
+        <revision>1.0.0-SNAPSHOT</revision>
     </properties>
 
     <modules>

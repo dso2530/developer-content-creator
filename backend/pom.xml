@@ -9,7 +9,7 @@
     <parent>
         <groupId>io.developercontentcreator</groupId>
         <artifactId>developer-content-creator</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -19,7 +19,25 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- BOM Spring Boot -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
+            <!-- BOM Spring Cloud -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- BOM interne : une seule déclaration -->
             <dependency>
                 <groupId>io.developercontentcreator</groupId>
                 <artifactId>bom</artifactId>
@@ -27,7 +45,6 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 
