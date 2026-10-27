@@ -10,7 +10,7 @@
      <parent>
         <groupId>io.developercontentcreator</groupId>
         <artifactId>library-parent</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../../library-parent/pom.xml</relativePath>
     </parent>
 

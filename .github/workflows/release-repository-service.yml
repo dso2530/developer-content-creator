@@ -76,11 +76,17 @@ jobs:
           java -version
           mvn -version
 
+      - name: Check Java formatting
+        run: mvn -B -ntp spotless:check
+
       - name: Build and verify repository-service with dependencies
         run: >
           mvn -B -ntp
           -pl backend/repository-service
           -am clean verify
+
+      - name: Verify JaCoCo reports
+        run: ./scripts/verify-jacoco-coverage.sh
 
       - name: Summarize release validation
         env:

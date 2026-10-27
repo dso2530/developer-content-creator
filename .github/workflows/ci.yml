@@ -48,6 +48,9 @@ jobs:
       - name: Build and verify all Maven modules
         run: mvn -B -ntp clean verify
 
+      - name: Verify JaCoCo reports for production modules
+        run: ./scripts/verify-jacoco-coverage.sh
+
       - name: Upload test and coverage reports
         if: always()
         uses: actions/upload-artifact@v4
