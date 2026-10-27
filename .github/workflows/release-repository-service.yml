@@ -76,6 +76,9 @@ jobs:
           java -version
           mvn -version
 
+      - name: Check Java formatting
+        run: mvn -B -ntp spotless:check
+
       - name: Build and verify repository-service with dependencies
         run: >
           mvn -B -ntp
