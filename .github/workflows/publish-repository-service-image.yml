@@ -175,46 +175,58 @@ jobs:
             --file backend/repository-service/Dockerfile \
             .
 
-      # Produit un inventaire des composants de l'image finale.
+      - name: Export image for Trivy
+        shell: bash
+        env:
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          IMAGE_ARCHIVE: ${{ runner.temp }}/repository-service-image.tar
+        run: |
+          set -euo pipefail
+
+          podman save \
+            --format docker-archive \
+            --output "$IMAGE_ARCHIVE" \
+            "$SHA_TAG"
+
+          test -s "$IMAGE_ARCHIVE"
+
       - name: Generate image SBOM
         shell: bash
         env:
-          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          IMAGE_ARCHIVE: ${{ runner.temp }}/repository-service-image.tar
         run: |
           set -euo pipefail
 
           trivy image \
+            --input "$IMAGE_ARCHIVE" \
             --format cyclonedx \
-            --output reports/security/repository-service-sbom.cdx.json \
-            "$SHA_TAG"
+            --output reports/security/repository-service-sbom.cdx.json
 
           test -s reports/security/repository-service-sbom.cdx.json
 
-      # Le rapport JSON conserve les détails des vulnérabilités.
-      # Cette étape est informative : les CVE détectées ne provoquent
-      # pas à elles seules un échec tant qu'aucune politique de blocage
-      # explicite n'a été définie.
       - name: Scan image vulnerabilities
         shell: bash
         env:
-          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          IMAGE_ARCHIVE: ${{ runner.temp }}/repository-service-image.tar
         run: |
           set -euo pipefail
 
           trivy image \
+            --input "$IMAGE_ARCHIVE" \
             --scanners vuln \
             --format json \
-            --output reports/security/repository-service-vulnerabilities.json \
-            "$SHA_TAG"
+            --output reports/security/repository-service-vulnerabilities.json
 
           test -s reports/security/repository-service-vulnerabilities.json
 
           trivy image \
+            --input "$IMAGE_ARCHIVE" \
             --scanners vuln \
             --severity HIGH,CRITICAL \
             --format table \
-            "$SHA_TAG" \
             | tee reports/security/repository-service-vulnerabilities.txt
+
+          rm -f "$IMAGE_ARCHIVE"
 
       - name: Authenticate to Harbor
         shell: bash
