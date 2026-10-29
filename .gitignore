@@ -45,3 +45,15 @@ jacoco.exec
 
 # OS
 Thumbs.db
+
+# Local backups - never commit
+*.backup
+*.backup.*
+
+# Local Harbor configuration and installation backups
+/harbor-values.yaml
+/harbor-values.backup.yaml
+/harbor-values-installed-backup.yaml
+
+# Locally generated security reports
+/reports/
