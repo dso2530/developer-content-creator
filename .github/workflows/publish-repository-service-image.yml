@@ -156,7 +156,6 @@ jobs:
           set -euo pipefail
 
           podman build \
-            --cgroups=disabled \
             --pull=always \
             --tag "$SHA_TAG" \
             --file backend/repository-service/Dockerfile \
