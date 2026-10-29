@@ -1,0 +1,61 @@
+# Harbor — configuration de développement local
+# À utiliser avec le chart officiel harbor/harbor.
+# Vérifier les valeurs disponibles dans la version du chart installée.
+
+expose:
+  type: nodePort
+
+  tls:
+    enabled: false
+
+  nodePort:
+    name: harbor
+    ports:
+      http:
+        port: 30002
+      https:
+        port: 30003
+
+externalURL: http://192.168.1.40:30002
+
+# Configuration du stockage persistant
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 20Gi
+    jobservice:
+      jobLog:
+        storageClass: ""
+        accessMode: ReadWriteOnce
+        size: 1Gi
+    database:
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 5Gi
+    redis:
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    trivy:
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 5Gi
+
+# Paramètres de développement
+portal:
+  replicas: 1
+
+core:
+  replicas: 1
+
+jobservice:
+  replicas: 1
+
+registry:
+  replicas: 1
+
+trivy:
+  enabled: true
