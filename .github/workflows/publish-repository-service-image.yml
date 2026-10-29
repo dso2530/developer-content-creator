@@ -53,12 +53,14 @@ jobs:
 
       - name: Verify project
         run: |
+          set -euo pipefail
+
           mvn -B -ntp \
             -pl backend/repository-service \
             -am clean verify
 
   publish:
-    name: Build and publish image with Podman
+    name: Build, scan and publish image with Podman
     runs-on: [self-hosted, Linux, X64]
     needs: verify
     timeout-minutes: 45
@@ -85,7 +87,7 @@ jobs:
           ref: ${{ github.event_name == 'workflow_dispatch' && format('repository-service-v{0}', inputs.version) || github.ref }}
           persist-credentials: false
 
-      - name: Check Podman
+      - name: Check Podman and Trivy
         shell: bash
         run: |
           set -euo pipefail
@@ -93,6 +95,20 @@ jobs:
           command -v podman
           podman --version
           podman info
+
+          if ! command -v trivy >/dev/null 2>&1; then
+            echo "::error::Trivy est absent du runner self-hosted."
+            echo "::error::Installe Trivy sur le runner avant de relancer ce workflow."
+            exit 1
+          fi
+
+          trivy --version
+
+      - name: Prepare security reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/security
 
       - name: Resolve image tags
         id: tags
@@ -111,7 +127,6 @@ jobs:
             exit 1
           fi
 
-          # Empêche les valeurs de configuration d'injecter un chemin inattendu.
           if [[ ! "$HARBOR_REGISTRY" =~ ^[a-zA-Z0-9.-]+:[0-9]+$ ]]; then
             echo "::error::HARBOR_REGISTRY doit être de la forme host:port."
             exit 1
@@ -150,7 +165,6 @@ jobs:
       - name: Build image with Podman
         shell: bash
         env:
-          IMAGE: ${{ steps.tags.outputs.image }}
           SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
         run: |
           set -euo pipefail
@@ -160,6 +174,47 @@ jobs:
             --tag "$SHA_TAG" \
             --file backend/repository-service/Dockerfile \
             .
+
+      # Produit un inventaire des composants de l'image finale.
+      - name: Generate image SBOM
+        shell: bash
+        env:
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+        run: |
+          set -euo pipefail
+
+          trivy image \
+            --format cyclonedx \
+            --output reports/security/repository-service-sbom.cdx.json \
+            "$SHA_TAG"
+
+          test -s reports/security/repository-service-sbom.cdx.json
+
+      # Le rapport JSON conserve les détails des vulnérabilités.
+      # Cette étape est informative : les CVE détectées ne provoquent
+      # pas à elles seules un échec tant qu'aucune politique de blocage
+      # explicite n'a été définie.
+      - name: Scan image vulnerabilities
+        shell: bash
+        env:
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+        run: |
+          set -euo pipefail
+
+          trivy image \
+            --scanners vuln \
+            --format json \
+            --output reports/security/repository-service-vulnerabilities.json \
+            "$SHA_TAG"
+
+          test -s reports/security/repository-service-vulnerabilities.json
+
+          trivy image \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --format table \
+            "$SHA_TAG" \
+            | tee reports/security/repository-service-vulnerabilities.txt
 
       - name: Authenticate to Harbor
         shell: bash
@@ -218,12 +273,24 @@ jobs:
               "$VERSION_TAG"
           fi
 
+      # Les rapports restent disponibles même si le push échoue.
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: repository-service-security-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/security/
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Display published image
         shell: bash
         env:
           SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
           VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
         run: |
+          set -euo pipefail
+
           echo "Image publiée : $SHA_TAG"
 
           if [[ -n "$VERSION_TAG" ]]; then
