@@ -21,43 +21,39 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.developercontentcreator</groupId>
             <artifactId>github-sdk</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.developercontentcreator</groupId>
             <artifactId>common</artifactId>
         </dependency>
-
          <dependency>
             <groupId>io.developercontentcreator</groupId>
             <artifactId>logging-starter</artifactId>
          </dependency>
-
         <dependency>
             <groupId>io.developercontentcreator</groupId>
             <artifactId>messaging-starter</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>io.developercontentcreator</groupId>
+            <artifactId>observability-starter</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
