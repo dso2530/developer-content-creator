@@ -1,0 +1,231 @@
+name: Publish repository-service image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "repository-service-v*"
+
+  pull_request:
+    paths:
+      - "backend/repository-service/**"
+      - "library-parent/**"
+      - "service-parent/**"
+      - "shared/**"
+      - "bom/**"
+      - "pom.xml"
+      - ".github/workflows/publish-repository-service-image.yml"
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version SemVer à publier, sans préfixe v"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repository-service-image-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE_NAME: repository-service
+
+jobs:
+  verify:
+    name: Verify Maven project
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Verify project
+        run: |
+          mvn -B -ntp \
+            -pl backend/repository-service \
+            -am clean verify
+
+  publish:
+    name: Build and publish image with Podman
+    runs-on: [self-hosted, Linux, X64]
+    needs: verify
+    timeout-minutes: 45
+
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Validate manual version
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "::error::Version invalide : $VERSION. Format attendu : X.Y.Z"
+            exit 1
+          fi
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('repository-service-v{0}', inputs.version) || github.ref }}
+          persist-credentials: false
+
+      - name: Check Podman
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          command -v podman
+          podman --version
+          podman info
+
+      - name: Resolve image tags
+        id: tags
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          INPUT_VERSION: ${{ inputs.version }}
+          HARBOR_REGISTRY: ${{ vars.HARBOR_REGISTRY }}
+          HARBOR_PROJECT: ${{ vars.HARBOR_PROJECT }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$HARBOR_REGISTRY" || -z "$HARBOR_PROJECT" ]]; then
+            echo "::error::Définis HARBOR_REGISTRY et HARBOR_PROJECT dans les variables GitHub."
+            exit 1
+          fi
+
+          # Empêche les valeurs de configuration d'injecter un chemin inattendu.
+          if [[ ! "$HARBOR_REGISTRY" =~ ^[a-zA-Z0-9.-]+:[0-9]+$ ]]; then
+            echo "::error::HARBOR_REGISTRY doit être de la forme host:port."
+            exit 1
+          fi
+
+          if [[ ! "$HARBOR_PROJECT" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
+            echo "::error::Nom de projet Harbor invalide."
+            exit 1
+          fi
+
+          IMAGE="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${IMAGE_NAME}"
+          COMMIT_SHA="$(git rev-parse HEAD)"
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=$IMAGE:sha-$SHORT_SHA" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$COMMIT_SHA" >> "$GITHUB_OUTPUT"
+
+          VERSION=""
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            VERSION="$INPUT_VERSION"
+          elif [[ "$REF" == refs/tags/repository-service-v* ]]; then
+            VERSION="${REF#refs/tags/repository-service-v}"
+          fi
+
+          if [[ -n "$VERSION" ]]; then
+            if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+              echo "::error::Tag de release invalide : $VERSION"
+              exit 1
+            fi
+
+            echo "version_tag=$IMAGE:$VERSION" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build image with Podman
+        shell: bash
+        env:
+          IMAGE: ${{ steps.tags.outputs.image }}
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+        run: |
+          set -euo pipefail
+
+          podman build \
+            --pull=always \
+            --tag "$SHA_TAG" \
+            --file backend/repository-service/Dockerfile \
+            .
+
+      - name: Authenticate to Harbor
+        shell: bash
+        env:
+          HARBOR_REGISTRY: ${{ vars.HARBOR_REGISTRY }}
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+          AUTHFILE: ${{ runner.temp }}/harbor-auth.json
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$HARBOR_USERNAME" || -z "$HARBOR_PASSWORD" ]]; then
+            echo "::error::Secrets Harbor absents."
+            exit 1
+          fi
+
+          umask 077
+
+          printf '%s' "$HARBOR_PASSWORD" |
+            podman login \
+              --authfile "$AUTHFILE" \
+              --tls-verify=false \
+              --username "$HARBOR_USERNAME" \
+              --password-stdin \
+              "$HARBOR_REGISTRY"
+
+      - name: Push image to Harbor
+        shell: bash
+        env:
+          IMAGE: ${{ steps.tags.outputs.image }}
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
+          AUTHFILE: ${{ runner.temp }}/harbor-auth.json
+        run: |
+          set -euo pipefail
+
+          cleanup() {
+            podman logout \
+              --authfile "$AUTHFILE" \
+              "${IMAGE%%/*}" >/dev/null 2>&1 || true
+            rm -f "$AUTHFILE"
+          }
+          trap cleanup EXIT
+
+          podman push \
+            --authfile "$AUTHFILE" \
+            --tls-verify=false \
+            "$SHA_TAG"
+
+          if [[ -n "$VERSION_TAG" ]]; then
+            podman tag "$SHA_TAG" "$VERSION_TAG"
+
+            podman push \
+              --authfile "$AUTHFILE" \
+              --tls-verify=false \
+              "$VERSION_TAG"
+          fi
+
+      - name: Display published image
+        shell: bash
+        env:
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
+        run: |
+          echo "Image publiée : $SHA_TAG"
+
+          if [[ -n "$VERSION_TAG" ]]; then
+            echo "Image de release : $VERSION_TAG"
+          fi
