@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: developer-content-creator-repository-service-dev
+  namespace: argocd
+spec:
+  project: default
+  sources:
+    - repoURL: https://github.com/dso2530/developer-content-creator.git
+      targetRevision: develop
+      path: deployment/helm/developer-content-creator
+      helm:
+        valueFiles:
+          - $values/gitops/dev/repository-service/values.yaml
+    - repoURL: https://github.com/dso2530/developer-content-creator.git
+      targetRevision: develop
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: developer-content-creator
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
