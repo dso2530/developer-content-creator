@@ -70,13 +70,32 @@ Fichier généré :
 
 [`structurizr-C2-Containers.mmd`](diagrams/structurizr-C2-Containers.mmd)
 
-Cette vue présente les principaux services applicatifs et composants
-d'infrastructure :
+Cette vue présente les principaux services applicatifs et composants d'infrastructure :
 - le gateway ;
 - les services métier ;
 - PostgreSQL ;
 - Apache Kafka ;
 - les relations de communication.
+
+### C3 — Components
+
+Les diagrammes C3 décrivent les composants internes des services et leurs relations.
+
+#### Repository Service
+
+Fichier généré :
+
+[`C3-repository-service.mmd`](diagrams/C3-repository-service.mmd)
+
+Cette première vue C3 documente l'implémentation actuelle du `repository-service`.
+
+[Consulter le diagramme C3 — Repository Service](diagrams/C3-repository-service.mmd)
+
+Composants identifiés :
+- `RepositoryServiceApplication` : point d'entrée Spring Boot.
+- `HealthController` : expose l'endpoint `GET /api/v1/health`.
+
+> Le diagramme représente l'état actuel du code source. Les composants métier et les intégrations GitHub/Kafka seront ajoutés au fur et à mesure de leur implémentation.
 
 ### Évolutions possibles
 

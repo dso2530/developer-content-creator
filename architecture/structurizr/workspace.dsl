@@ -17,7 +17,13 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
 
             gateway = container "Gateway" "Point d'entrée HTTP de la plateforme." "Java 21, Spring Boot"
 
-            repositoryService = container "Repository Service" "Gère les dépôts et les interactions avec GitHub." "Java 21, Spring Boot"
+            repositoryService = container "Repository Service" "Service Spring Boot ; expose actuellement un endpoint de santé." "Java 21, Spring Boot" {
+                healthController = component "HealthController" "Expose GET /api/v1/health et retourne le statut UP." "Spring MVC REST Controller"
+
+                applicationEntryPoint = component "RepositoryServiceApplication" "Point d'entrée Spring Boot ; démarre le contexte applicatif." "Spring Boot"
+
+                applicationEntryPoint -> healthController "Enregistre le contrôleur dans le contexte Spring"
+            }
 
             aiOrchestrator = container "AI Orchestrator" "Coordonne les traitements IA." "Java 21, Spring Boot"
 
@@ -61,6 +67,11 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
         }
 
         container platform "C2-Containers" "C2 - Conteneurs applicatifs et infrastructure" {
+            include *
+            autoLayout lr
+        }
+
+        component platform.repositoryService "C3-Repository-Service" "C3 - Composants du Repository Service" {
             include *
             autoLayout lr
         }
