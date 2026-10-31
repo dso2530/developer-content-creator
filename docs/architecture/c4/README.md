@@ -50,6 +50,20 @@ Les diagrammes sont générés à partir de ce modèle. Ils ne doivent pas
 Les relations présentées dans les diagrammes doivent être vérifiées
 par rapport au code et à la configuration réels.
 
+### État d'implémentation des services
+
+Le diagramme C2 représente l'architecture cible de la plateforme. Tous les services qui y figurent ne sont pas nécessairement implémentés.
+
+| Service | État actuel | Documentation |
+|---|---|---|
+| gateway | Structure initiale, sans code source | C2 |
+| repository-service | Endpoint de santé implémenté | C2 + C3 |
+| ai-orchestrator | Structure initiale, sans code source | C2 |
+| content-service | Structure initiale, sans code source | C2 |
+| publication-service | Structure initiale, sans code source | C2 |
+
+Les diagrammes C3 seront créés lorsque les composants internes correspondants seront effectivement implémentés.
+
 ## 4. Diagrammes C4 disponibles
 
 ### C1 — System Context
