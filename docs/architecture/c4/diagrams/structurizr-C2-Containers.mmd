@@ -1,0 +1,47 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Container View: Developer Content Creator"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    1["<div style='font-weight: bold'>Développeur</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Utilise la plateforme pour<br />générer du contenu technique<br />à partir de dépôts GitHub.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    2["<div style='font-weight: bold'>GitHub</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Héberge les dépôts sources et<br />expose les API GitHub.</div>"]
+    style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    3["<div style='font-weight: bold'>LLM Provider</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Fournisseur de modèles de<br />langage : Ollama ou OpenAI.</div>"]
+    style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    subgraph 4 ["Developer Content Creator"]
+      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      10[("<div style='font-weight: bold'>PostgreSQL</div><div style='font-size: 70%; margin-top: 0px'>[Container: PostgreSQL 17, pgvector]</div><div style='font-size: 80%; margin-top:10px'>Stockage relationnel de la<br />plateforme, avec pgvector si<br />nécessaire.</div>")]
+      style 10 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      11["<div style='font-weight: bold'>Kafka</div><div style='font-size: 70%; margin-top: 0px'>[Container: Apache Kafka]</div><div style='font-size: 80%; margin-top:10px'>Transport asynchrone des<br />événements entre services.</div>"]
+      style 11 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      5["<div style='font-weight: bold'>Gateway</div><div style='font-size: 70%; margin-top: 0px'>[Container: Java 21, Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Point d'entrée HTTP de la<br />plateforme.</div>"]
+      style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      6["<div style='font-weight: bold'>Repository Service</div><div style='font-size: 70%; margin-top: 0px'>[Container: Java 21, Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Gère les dépôts et les<br />interactions avec GitHub.</div>"]
+      style 6 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      7["<div style='font-weight: bold'>AI Orchestrator</div><div style='font-size: 70%; margin-top: 0px'>[Container: Java 21, Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Coordonne les traitements IA.</div>"]
+      style 7 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      8["<div style='font-weight: bold'>Content Service</div><div style='font-size: 70%; margin-top: 0px'>[Container: Java 21, Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Gère le contenu technique<br />généré.</div>"]
+      style 8 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      9["<div style='font-weight: bold'>Publication Service</div><div style='font-size: 70%; margin-top: 0px'>[Container: Java 21, Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Gère les opérations de<br />publication du contenu.</div>"]
+      style 9 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    end
+
+    1-. "<div>Utilise</div><div style='font-size: 70%'>[HTTPS]</div>" .->5
+    1-. "<div>Consulte et gère ses dépôts</div><div style='font-size: 70%'>[HTTPS]</div>" .->2
+    5-. "<div>Transmet les requêtes<br />relatives aux dépôts</div><div style='font-size: 70%'>[HTTP]</div>" .->6
+    5-. "<div>Transmet les requêtes de<br />contenu</div><div style='font-size: 70%'>[HTTP]</div>" .->8
+    6-. "<div>Consulte les dépôts et leurs<br />métadonnées</div><div style='font-size: 70%'>[HTTPS]</div>" .->2
+    6-. "<div>Lit et écrit les données des<br />dépôts</div><div style='font-size: 70%'>[SQL]</div>" .->10
+    6-. "<div>Publie ou consomme les<br />événements configurés</div><div style='font-size: 70%'>[Kafka protocol]</div>" .->11
+    7-. "<div>Échange les événements de<br />traitement</div><div style='font-size: 70%'>[Kafka protocol]</div>" .->11
+    7-. "<div>Demande la génération ou<br />l'analyse de contenu</div><div style='font-size: 70%'>[API modèle de langage]</div>" .->3
+    8-. "<div>Stocke les contenus</div><div style='font-size: 70%'>[SQL]</div>" .->10
+    8-. "<div>Échange les événements de<br />contenu</div><div style='font-size: 70%'>[Kafka protocol]</div>" .->11
+    9-. "<div>Reçoit les demandes de<br />publication</div><div style='font-size: 70%'>[Kafka protocol]</div>" .->11
+    9-. "<div>Interagit avec les API GitHub<br />selon les fonctionnalités<br />activées</div><div style='font-size: 70%'>[HTTPS]</div>" .->2
+
+  end

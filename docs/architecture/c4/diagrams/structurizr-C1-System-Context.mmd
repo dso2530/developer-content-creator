@@ -1,0 +1,21 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["System Context View: Developer Content Creator"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    1["<div style='font-weight: bold'>Développeur</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Utilise la plateforme pour<br />générer du contenu technique<br />à partir de dépôts GitHub.</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    2["<div style='font-weight: bold'>GitHub</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Héberge les dépôts sources et<br />expose les API GitHub.</div>"]
+    style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    3["<div style='font-weight: bold'>LLM Provider</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Fournisseur de modèles de<br />langage : Ollama ou OpenAI.</div>"]
+    style 3 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    4["<div style='font-weight: bold'>Developer Content Creator</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Plateforme de génération de<br />contenu technique à partir de<br />dépôts logiciels.</div>"]
+    style 4 fill:#1168bd,stroke:#0b4884,color:#ffffff
+
+    1-. "<div>Utilise</div><div style='font-size: 70%'>[HTTPS]</div>" .->4
+    1-. "<div>Consulte et gère ses dépôts</div><div style='font-size: 70%'>[HTTPS]</div>" .->2
+    4-. "<div>Consulte les dépôts et leurs<br />métadonnées</div><div style='font-size: 70%'>[HTTPS]</div>" .->2
+    4-. "<div>Demande la génération ou<br />l'analyse de contenu</div><div style='font-size: 70%'>[API modèle de langage]</div>" .->3
+
+  end
