@@ -24,7 +24,7 @@ on:
         type: string
 
       manual_version:
-        description: "Version SemVer déjà validée à publier manuellement"
+        description: "Version SemVer à publier manuellement"
         required: false
         default: ""
         type: string
@@ -42,7 +42,7 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.manual_version != '' && format('{0}{1}', inputs.release_tag_prefix, inputs.manual_version) || github.ref }}
+          ref: ${{ inputs.manual_version != '' && format('{0}{1}', inputs.release_tag_prefix, inputs.manual_version) || github.sha }}
           fetch-depth: 0
 
       - name: Validate manual release
@@ -55,7 +55,7 @@ jobs:
           set -euo pipefail
 
           if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            echo "::error::Version invalide : $VERSION"
+            echo "::error::Version SemVer invalide."
             exit 1
           fi
 
@@ -71,7 +71,7 @@ jobs:
           TAG_COMMIT="$(git rev-parse "refs/tags/$TAG^{commit}")"
 
           if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
-            echo "::error::Le commit du tag $TAG n'appartient pas à l'historique de main."
+            echo "::error::Le commit du tag n'appartient pas à l'historique de main."
             exit 1
           fi
 
@@ -83,11 +83,6 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: maven
-
-      - name: Display Java and Maven versions
-        run: |
-          java -version
-          mvn -version
 
       - name: Check Java formatting
         run: mvn -B -ntp spotless:check
@@ -117,26 +112,24 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-  build-scan-publish:
-    name: Build, scan and publish ${{ inputs.service_name }}
-    runs-on: [self-hosted, Linux, X64]
+  build-and-scan:
+    name: Build and scan ${{ inputs.service_name }}
     needs: verify
     timeout-minutes: 45
 
-    if: >-
-      (github.event_name == 'push' &&
-       (github.ref == 'refs/heads/main' ||
-        startsWith(github.ref, format('refs/tags/{0}', inputs.release_tag_prefix)))
-      ) ||
-      (github.event_name == 'workflow_dispatch' &&
-       github.ref == 'refs/heads/main' &&
-       inputs.manual_version != '')
+    # Le code des pull requests ne s'exécute jamais sur le runner local.
+    runs-on: ${{ github.event_name == 'pull_request' && 'ubuntu-latest' || fromJSON('["self-hosted", "Linux", "X64"]') }}
+
+    outputs:
+      image: ${{ steps.tags.outputs.image }}
+      sha_tag: ${{ steps.tags.outputs.sha_tag }}
+      version_tag: ${{ steps.tags.outputs.version_tag }}
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.manual_version != '' && format('{0}{1}', inputs.release_tag_prefix, inputs.manual_version) || github.ref }}
+          ref: ${{ inputs.manual_version != '' && format('{0}{1}', inputs.release_tag_prefix, inputs.manual_version) || github.sha }}
           persist-credentials: false
           fetch-depth: 0
 
@@ -154,11 +147,28 @@ jobs:
           TAG_COMMIT="$(git rev-parse "refs/tags/$TAG^{commit}")"
 
           if [[ "$CHECKED_OUT_COMMIT" != "$TAG_COMMIT" ]]; then
-            echo "::error::Le commit checkouté ne correspond pas au tag $TAG."
+            echo "::error::Le commit checkouté ne correspond pas au tag."
             exit 1
           fi
 
-          echo "Commit de release validé : $CHECKED_OUT_COMMIT"
+      - name: Install Podman and Trivy on GitHub-hosted runner
+        if: runner.environment == 'github-hosted'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y podman wget gnupg
+
+          wget -qO- https://aquasecurity.github.io/trivy-repo/deb/public.key \
+            | sudo gpg --dearmor \
+                -o /usr/share/keyrings/trivy.gpg
+
+          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(. /etc/os-release && echo "$VERSION_CODENAME") main" \
+            | sudo tee /etc/apt/sources.list.d/trivy.list >/dev/null
+
+          sudo apt-get update
+          sudo apt-get install -y trivy
 
       - name: Check Podman and Trivy
         shell: bash
@@ -172,15 +182,7 @@ jobs:
           command -v trivy
           trivy --version
 
-      - name: Prepare security reports
-        env:
-          SERVICE_NAME: ${{ inputs.service_name }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p reports/security
-
-      - name: Resolve image tags
+      - name: Resolve image metadata
         id: tags
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -194,31 +196,36 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ -z "$HARBOR_REGISTRY" || -z "$HARBOR_PROJECT" ]]; then
-            echo "::error::Définis HARBOR_REGISTRY et HARBOR_PROJECT dans les variables GitHub."
-            exit 1
-          fi
-
-          if [[ ! "$HARBOR_REGISTRY" =~ ^[a-zA-Z0-9.-]+:[0-9]+$ ]]; then
-            echo "::error::HARBOR_REGISTRY doit être au format host:port."
-            exit 1
-          fi
-
-          if [[ ! "$HARBOR_PROJECT" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
-            echo "::error::Nom de projet Harbor invalide."
-            exit 1
-          fi
-
           if [[ ! "$SERVICE_NAME" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
             echo "::error::Nom de service invalide."
             exit 1
           fi
 
-          IMAGE="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${SERVICE_NAME}"
+          IMAGE=""
+          VERSION=""
+
+          # Les PR n'ont besoin ni de Harbor ni de ses secrets.
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            if [[ -z "$HARBOR_REGISTRY" || -z "$HARBOR_PROJECT" ]]; then
+              echo "::error::Variables HARBOR_REGISTRY et HARBOR_PROJECT absentes."
+              exit 1
+            fi
+
+            if [[ ! "$HARBOR_REGISTRY" =~ ^[a-zA-Z0-9.-]+:[0-9]+$ ]]; then
+              echo "::error::HARBOR_REGISTRY doit être au format host:port."
+              exit 1
+            fi
+
+            if [[ ! "$HARBOR_PROJECT" =~ ^[a-z0-9]+([._-][a-z0-9]+)*$ ]]; then
+              echo "::error::Nom de projet Harbor invalide."
+              exit 1
+            fi
+
+            IMAGE="${HARBOR_REGISTRY}/${HARBOR_PROJECT}/${SERVICE_NAME}"
+          fi
+
           COMMIT_SHA="$(git rev-parse HEAD)"
           SHORT_SHA="${COMMIT_SHA:0:7}"
-
-          VERSION=""
 
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             VERSION="$INPUT_VERSION"
@@ -228,49 +235,64 @@ jobs:
           fi
 
           if [[ -n "$VERSION" && ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
-            echo "::error::Version de release invalide : $VERSION"
+            echo "::error::Version de release invalide."
             exit 1
           fi
 
           {
             printf 'image=%s\n' "$IMAGE"
-            printf 'sha_tag=%s\n' "$IMAGE:sha-$SHORT_SHA"
+            printf 'sha_tag=%s\n' "${IMAGE:+$IMAGE:sha-$SHORT_SHA}"
             printf 'commit_sha=%s\n' "$COMMIT_SHA"
-            printf 'version_tag=%s\n' "${VERSION:+$IMAGE:$VERSION}"
+            printf 'version_tag=%s\n' "${VERSION:+${IMAGE:+$IMAGE:$VERSION}}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Build image with Podman
         env:
-          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          SERVICE_NAME: ${{ inputs.service_name }}
           DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
+          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
         shell: bash
         run: |
           set -euo pipefail
+
+          if [[ -n "$SHA_TAG" ]]; then
+            IMAGE_TAG="$SHA_TAG"
+          else
+            IMAGE_TAG="${SERVICE_NAME}:ci-${GITHUB_SHA:0:7}"
+          fi
+
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
 
           podman build \
             --pull=always \
-            --tag "$SHA_TAG" \
+            --tag "$IMAGE_TAG" \
             --file "$DOCKERFILE_PATH" \
             .
 
+      - name: Prepare security reports
+        run: mkdir -p reports/security
+
       - name: Export image for Trivy
         env:
-          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
-          IMAGE_ARCHIVE: ${{ runner.temp }}/${{ inputs.service_name }}-image.tar
+          IMAGE_TAG: ${{ steps.tags.outputs.sha_tag }}
+          SERVICE_NAME: ${{ inputs.service_name }}
         shell: bash
         run: |
           set -euo pipefail
 
+          TAG="${IMAGE_TAG:-${SERVICE_NAME}:ci-${GITHUB_SHA:0:7}}"
+          ARCHIVE="$RUNNER_TEMP/${SERVICE_NAME}-image.tar"
+
           podman save \
             --format docker-archive \
-            --output "$IMAGE_ARCHIVE" \
-            "$SHA_TAG"
+            --output "$ARCHIVE" \
+            "$TAG"
 
-          test -s "$IMAGE_ARCHIVE"
+          test -s "$ARCHIVE"
+          echo "IMAGE_ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
 
       - name: Generate image SBOM
         env:
-          IMAGE_ARCHIVE: ${{ runner.temp }}/${{ inputs.service_name }}-image.tar
           SERVICE_NAME: ${{ inputs.service_name }}
         shell: bash
         run: |
@@ -285,7 +307,6 @@ jobs:
 
       - name: Scan image vulnerabilities
         env:
-          IMAGE_ARCHIVE: ${{ runner.temp }}/${{ inputs.service_name }}-image.tar
           SERVICE_NAME: ${{ inputs.service_name }}
         shell: bash
         run: |
@@ -301,7 +322,6 @@ jobs:
 
       - name: Enforce vulnerability policy
         env:
-          IMAGE_ARCHIVE: ${{ runner.temp }}/${{ inputs.service_name }}-image.tar
           SERVICE_NAME: ${{ inputs.service_name }}
         shell: bash
         run: |
@@ -314,6 +334,138 @@ jobs:
             --exit-code 1 \
             --format table \
             | tee "reports/security/${SERVICE_NAME}-vulnerabilities.txt"
+
+      - name: Calculate image archive checksum
+        if: success()
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd "$RUNNER_TEMP"
+          sha256sum "${SERVICE_NAME}-image.tar" \
+            > "${SERVICE_NAME}-image.tar.sha256"
+
+      - name: Upload validated image archive
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.service_name }}-image-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/${{ inputs.service_name }}-image.tar
+            ${{ runner.temp }}/${{ inputs.service_name }}-image.tar.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.service_name }}-security-${{ github.run_id }}-${{ github.run_attempt }}
+          path: reports/security/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Clean up temporary image archive
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/${{ inputs.service_name }}-image.tar"
+          rm -f "$RUNNER_TEMP/${{ inputs.service_name }}-image.tar.sha256"
+
+  publish:
+    name: Publish ${{ inputs.service_name }} to Harbor
+    needs: build-and-scan
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 20
+
+    # La publication est impossible depuis une pull request.
+    if: >-
+      needs.build-and-scan.result == 'success' &&
+      (
+        (
+          github.event_name == 'push' &&
+          (
+            github.ref == 'refs/heads/main' ||
+            startsWith(github.ref, format('refs/tags/{0}', inputs.release_tag_prefix))
+          )
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          github.ref == 'refs/heads/main' &&
+          inputs.manual_version != ''
+        )
+      )
+
+    steps:
+      - name: Download validated image archive
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.service_name }}-image-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/validated-image
+
+      - name: Verify archive checksum
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd "$RUNNER_TEMP/validated-image"
+          sha256sum --check "${SERVICE_NAME}-image.tar.sha256"
+
+      - name: Load validated image
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          podman load \
+            --input "$RUNNER_TEMP/validated-image/${SERVICE_NAME}-image.tar"
+
+      - name: Resolve publication tags
+        id: tags
+        env:
+          SERVICE_NAME: ${{ inputs.service_name }}
+          RELEASE_TAG_PREFIX: ${{ inputs.release_tag_prefix }}
+          INPUT_VERSION: ${{ inputs.manual_version }}
+          REF: ${{ github.ref }}
+          EVENT_NAME: ${{ github.event_name }}
+          HARBOR_REGISTRY: ${{ vars.HARBOR_REGISTRY }}
+          HARBOR_PROJECT: ${{ vars.HARBOR_PROJECT }}
+          IMAGE: ${{ needs.build-and-scan.outputs.image }}
+          SHA_TAG: ${{ needs.build-and-scan.outputs.sha_tag }}
+          VERSION_TAG: ${{ needs.build-and-scan.outputs.version_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$HARBOR_REGISTRY" || -z "$HARBOR_PROJECT" || -z "$IMAGE" || -z "$SHA_TAG" ]]; then
+            echo "::error::Métadonnées de publication manquantes."
+            exit 1
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && -n "$INPUT_VERSION" ]]; then
+            VERSION_TAG="$IMAGE:$INPUT_VERSION"
+          elif [[ "$REF" == "refs/tags/${RELEASE_TAG_PREFIX}"* ]]; then
+            VERSION="${REF#refs/tags/}"
+            VERSION="${VERSION#"$RELEASE_TAG_PREFIX"}"
+            VERSION_TAG="$IMAGE:$VERSION"
+          fi
+
+          {
+            printf 'image=%s\n' "$IMAGE"
+            printf 'sha_tag=%s\n' "$SHA_TAG"
+            printf 'version_tag=%s\n' "$VERSION_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check Podman
+        run: |
+          set -euo pipefail
+          command -v podman
+          podman --version
 
       - name: Authenticate to Harbor
         env:
@@ -346,6 +498,7 @@ jobs:
           SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
           VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
           AUTHFILE: ${{ runner.temp }}/harbor-auth-${{ github.run_id }}-${{ github.run_attempt }}.json
+          HARBOR_REGISTRY: ${{ vars.HARBOR_REGISTRY }}
         shell: bash
         run: |
           set -euo pipefail
@@ -353,10 +506,13 @@ jobs:
           cleanup() {
             podman logout \
               --authfile "$AUTHFILE" \
-              "${IMAGE%%/*}" >/dev/null 2>&1 || true
+              "$HARBOR_REGISTRY" >/dev/null 2>&1 || true
             rm -f "$AUTHFILE"
           }
           trap cleanup EXIT
+
+          # Vérifier que l'image analysée est bien présente localement.
+          podman image exists "$SHA_TAG"
 
           podman push \
             --authfile "$AUTHFILE" \
@@ -385,30 +541,22 @@ jobs:
             podman logout \
               --authfile "$AUTHFILE" \
               "$HARBOR_REGISTRY" >/dev/null 2>&1 || true
-
             rm -f "$AUTHFILE"
           fi
 
-      - name: Clean up temporary image archive
+      - name: Clean up downloaded image archive
         if: always()
         env:
-          IMAGE_ARCHIVE: ${{ runner.temp }}/${{ inputs.service_name }}-image.tar
+          SERVICE_NAME: ${{ inputs.service_name }}
         shell: bash
-        run: rm -f "$IMAGE_ARCHIVE"
-
-      - name: Upload security reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.service_name }}-security-${{ github.run_id }}-${{ github.run_attempt }}
-          path: reports/security/
-          if-no-files-found: warn
-          retention-days: 30
+        run: |
+          rm -rf "$RUNNER_TEMP/validated-image"
+          podman image prune --force >/dev/null 2>&1 || true
 
       - name: Display published image
         env:
-          SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
-          VERSION_TAG: ${{ steps.tags.outputs.version_tag }}
+          SHA_TAG: ${{ needs.build-and-scan.outputs.sha_tag }}
+          VERSION_TAG: ${{ needs.build-and-scan.outputs.version_tag }}
         shell: bash
         run: |
           set -euo pipefail
