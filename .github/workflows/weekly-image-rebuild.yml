@@ -1,0 +1,66 @@
+name: Weekly Image Rebuild
+
+on:
+  schedule:
+    # Chaque lundi à 04:00 UTC
+    - cron: "0 4 * * 1"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-image-rebuild-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  repository-service:
+    name: Rebuild repository-service
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+    with:
+      service_name: repository-service
+      module_path: backend/repository-service
+      dockerfile_path: backend/repository-service/Dockerfile
+      release_tag_prefix: repository-service-v
+    secrets: inherit
+
+  ai-orchestrator:
+    name: Rebuild ai-orchestrator
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+    with:
+      service_name: ai-orchestrator
+      module_path: backend/ai-orchestrator
+      dockerfile_path: backend/ai-orchestrator/Dockerfile
+      release_tag_prefix: ai-orchestrator-v
+    secrets: inherit
+
+  content-service:
+    name: Rebuild content-service
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+    with:
+      service_name: content-service
+      module_path: backend/content-service
+      dockerfile_path: backend/content-service/Dockerfile
+      release_tag_prefix: content-service-v
+    secrets: inherit
+
+  publication-service:
+    name: Rebuild publication-service
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+    with:
+      service_name: publication-service
+      module_path: backend/publication-service
+      dockerfile_path: backend/publication-service/Dockerfile
+      release_tag_prefix: publication-service-v
+    secrets: inherit
+
+  gateway:
+    name: Rebuild gateway
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+    with:
+      service_name: gateway
+      module_path: backend/gateway
+      dockerfile_path: backend/gateway/Dockerfile
+      release_tag_prefix: gateway-v
+    secrets: inherit
