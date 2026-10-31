@@ -1,0 +1,47 @@
+name: Publish publication-service image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "publication-service-v*"
+
+  pull_request:
+    paths:
+      - "backend/publication-service/**"
+      - "library-parent/**"
+      - "service-parent/**"
+      - "backend/shared/**"
+      - "bom/**"
+      - "pom.xml"
+      - ".github/workflows/publish-publication-service-image.yml"
+      - ".github/workflows/reusable-image-pipeline.yml"
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version SemVer à publier, sans préfixe v"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publication-service-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image-pipeline:
+    name: Build, scan and publish publication-service
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+
+    with:
+      service_name: publication-service
+      module_path: backend/publication-service
+      dockerfile_path: backend/publication-service/Dockerfile
+      release_tag_prefix: publication-service-v
+      manual_version: ${{ inputs.version || '' }}
+
+    secrets: inherit
