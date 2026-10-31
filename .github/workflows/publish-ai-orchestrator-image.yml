@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
     tags:
       - "ai-orchestrator-v*"
 
@@ -43,5 +44,6 @@ jobs:
       dockerfile_path: backend/ai-orchestrator/Dockerfile
       release_tag_prefix: ai-orchestrator-v
       manual_version: ${{ inputs.version || '' }}
+      enforce_vulnerability_policy: ${{ !(github.ref == 'refs/heads/develop' && inputs.version == '') }}
 
     secrets: inherit

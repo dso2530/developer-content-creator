@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
     tags:
       - "publication-service-v*"
 
@@ -43,5 +44,6 @@ jobs:
       dockerfile_path: backend/publication-service/Dockerfile
       release_tag_prefix: publication-service-v
       manual_version: ${{ inputs.version || '' }}
+      enforce_vulnerability_policy: ${{ !(github.ref == 'refs/heads/develop' && inputs.version == '') }}
 
     secrets: inherit
