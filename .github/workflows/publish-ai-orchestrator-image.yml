@@ -1,0 +1,47 @@
+name: Publish ai-orchestrator image
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "ai-orchestrator-v*"
+
+  pull_request:
+    paths:
+      - "backend/ai-orchestrator/**"
+      - "library-parent/**"
+      - "service-parent/**"
+      - "backend/shared/**"
+      - "bom/**"
+      - "pom.xml"
+      - ".github/workflows/publish-ai-orchestrator-image.yml"
+      - ".github/workflows/reusable-image-pipeline.yml"
+
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version SemVer à publier, sans préfixe v"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-orchestrator-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  image-pipeline:
+    name: Build, scan and publish ai-orchestrator
+    uses: ./.github/workflows/reusable-image-pipeline.yml
+
+    with:
+      service_name: ai-orchestrator
+      module_path: backend/ai-orchestrator
+      dockerfile_path: backend/ai-orchestrator/Dockerfile
+      release_tag_prefix: ai-orchestrator-v
+      manual_version: ${{ inputs.version || '' }}
+
+    secrets: inherit
