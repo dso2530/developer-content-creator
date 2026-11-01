@@ -1,5 +1,6 @@
 package io.developercontentcreator.messaging.config;
 
+import io.developercontentcreator.messaging.contract.MessagingRegistryGroups;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "developer-content-creator.messaging")
@@ -45,6 +46,16 @@ public class MessagingProperties {
 
     private String encoding = "BINARY";
 
+    private String groupId = MessagingRegistryGroups.DEFAULT;
+
+    public String getGroupId() {
+      return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+      this.groupId = groupId;
+    }
+
     public String getUrl() {
       return url;
     }
@@ -71,6 +82,16 @@ public class MessagingProperties {
   }
 
   public static class Retry {
+
+    private boolean enabled = true;
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
 
     private int maxAttempts = 4;
 

@@ -15,6 +15,9 @@ public final class ApicurioKafkaConfiguration {
     Map<String, Object> defaults = registryDefaults(properties);
 
     defaults.put(
+        SchemaResolverConfig.EXPLICIT_ARTIFACT_GROUP_ID, properties.getRegistry().getGroupId());
+
+    defaults.put(
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         io.apicurio.registry.serde.avro.AvroKafkaSerializer.class);
 

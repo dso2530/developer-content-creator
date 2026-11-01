@@ -1,1 +1,2 @@
 io.developercontentcreator.messaging.MessagingAutoConfiguration
+io.developercontentcreator.messaging.config.KafkaErrorHandlerAutoConfiguration

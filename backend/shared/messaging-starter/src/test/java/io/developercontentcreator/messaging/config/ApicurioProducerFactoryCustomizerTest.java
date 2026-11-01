@@ -52,4 +52,20 @@ class ApicurioProducerFactoryCustomizerTest {
             SchemaResolverConfig.REGISTRY_URL, "http://custom-registry:8080/apis/registry/v3")
         .containsEntry(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, String.class);
   }
+
+  @Test
+  void shouldPreserveExplicitRegistryGroupId() {
+    Map<String, Object> initialConfiguration = new HashMap<>();
+
+    initialConfiguration.put(
+        SchemaResolverConfig.EXPLICIT_ARTIFACT_GROUP_ID, "service-specific-group");
+
+    DefaultKafkaProducerFactory<String, Object> factory =
+        new DefaultKafkaProducerFactory<>(initialConfiguration);
+
+    customizer.customize(factory);
+
+    assertThat(factory.getConfigurationProperties())
+        .containsEntry(SchemaResolverConfig.EXPLICIT_ARTIFACT_GROUP_ID, "service-specific-group");
+  }
 }
