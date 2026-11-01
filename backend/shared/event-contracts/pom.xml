@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+            http://maven.apache.org/POM/4.0.0
+            https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.developercontentcreator</groupId>
+        <artifactId>library-parent</artifactId>
+        <version>${revision}</version>
+        <relativePath>../../library-parent/pom.xml</relativePath>
+    </parent>
+
+    <artifactId>event-contracts</artifactId>
+    <packaging>jar</packaging>
+
+    <name>Event Contracts</name>
+    <description>
+        Centralized Avro event contracts shared between microservices.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-maven-plugin</artifactId>
+                <version>${avro.version}</version>
+
+                <executions>
+                    <execution>
+                        <id>generate-avro-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>schema</goal>
+                        </goals>
+
+                        <configuration>
+                            <sourceDirectory>
+                                ${project.basedir}/src/main/avro
+                            </sourceDirectory>
+
+                            <outputDirectory>
+                                ${project.build.directory}/generated-sources/avro
+                            </outputDirectory>
+
+                            <!--
+                              Compile EventMetadata before the
+                              event schemas that reference it.
+                            -->
+                            <imports>
+                                <import>
+                                    ${project.basedir}/src/main/avro/common/EventMetadata.avsc
+                                </import>
+                            </imports>
+
+                            <stringType>String</stringType>
+                            <createSetters>true</createSetters>
+                            <enableDecimalLogicalType>true</enableDecimalLogicalType>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

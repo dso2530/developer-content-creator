@@ -1,0 +1,36 @@
+{
+  "type": "record",
+  "name": "ContentPublished",
+  "namespace": "io.developercontentcreator.contracts.publication",
+  "doc": "Published when content has been successfully published.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "io.developercontentcreator.contracts.common.EventMetadata"
+    },
+    {
+      "name": "publicationId",
+      "type": "string"
+    },
+    {
+      "name": "contentId",
+      "type": "string"
+    },
+    {
+      "name": "platform",
+      "type": "string"
+    },
+    {
+      "name": "externalPublicationId",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "publishedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

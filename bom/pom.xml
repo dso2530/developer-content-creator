@@ -53,6 +53,11 @@
                 <artifactId>avro</artifactId>
                 <version>${avro.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.apicurio</groupId>
+                <artifactId>apicurio-registry-avro-serde-kafka</artifactId>
+                <version>${apicurio.version}</version>
+            </dependency>
 
                 <!-- Modules internes -->
             <dependency>
@@ -88,6 +93,12 @@
             <dependency>
                 <groupId>io.developercontentcreator</groupId>
                 <artifactId>observability-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.developercontentcreator</groupId>
+                <artifactId>event-contracts</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
