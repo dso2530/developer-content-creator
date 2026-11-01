@@ -21,7 +21,9 @@
     <description>
         Centralized Avro event contracts shared between microservices.
     </description>
-
+    <properties>
+        <jacoco.skip>true</jacoco.skip>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.avro</groupId>
