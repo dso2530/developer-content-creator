@@ -16,6 +16,10 @@
     <artifactId>bom</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <microsoft-kiota.version>1.9.1</microsoft-kiota.version>
+    </properties>
+
     <dependencyManagement>
 
         <dependencies>
@@ -57,6 +61,28 @@
                 <groupId>io.apicurio</groupId>
                 <artifactId>apicurio-registry-avro-serde-kafka</artifactId>
                 <version>${apicurio.version}</version>
+            </dependency>
+
+            <!-- Microsoft Kiota: override Apicurio's vulnerable transitive versions -->
+            <dependency>
+                <groupId>com.microsoft.kiota</groupId>
+                <artifactId>microsoft-kiota-abstractions</artifactId>
+                <version>${microsoft-kiota.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.microsoft.kiota</groupId>
+                <artifactId>microsoft-kiota-serialization-text</artifactId>
+                <version>${microsoft-kiota.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.microsoft.kiota</groupId>
+                <artifactId>microsoft-kiota-serialization-form</artifactId>
+                <version>${microsoft-kiota.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.microsoft.kiota</groupId>
+                <artifactId>microsoft-kiota-serialization-multipart</artifactId>
+                <version>${microsoft-kiota.version}</version>
             </dependency>
 
                 <!-- Modules internes -->
