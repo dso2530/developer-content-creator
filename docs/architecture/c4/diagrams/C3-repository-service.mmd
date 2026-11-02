@@ -1,0 +1,23 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Component View: Developer Content Creator - Repository Service"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    subgraph 4 ["Developer Content Creator"]
+      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      subgraph 6 ["Repository Service"]
+        style 6 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+        7["<div style='font-weight: bold'>HealthController</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring MVC REST Controller]</div><div style='font-size: 80%; margin-top:10px'>Expose GET /api/v1/health et<br />retourne le statut UP.</div>"]
+        style 7 fill:#ffffff,stroke:#444444,color:#444444
+        8["<div style='font-weight: bold'>RepositoryServiceApplication</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Point d'entrée Spring Boot ;<br />démarre le contexte<br />applicatif.</div>"]
+        style 8 fill:#ffffff,stroke:#444444,color:#444444
+      end
+
+    end
+
+    8-. "<div>Enregistre le contrôleur dans<br />le contexte Spring</div><div style='font-size: 70%'></div>" .->7
+
+  end

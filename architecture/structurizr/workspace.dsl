@@ -15,24 +15,31 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
 
         platform = softwareSystem "Developer Content Creator" "Plateforme de génération de contenu technique à partir de dépôts logiciels." {
 
-            gateway = container "Gateway" "Point d'entrée HTTP de la plateforme." "Java 21, Spring Boot"
 
-            repositoryService = container "Repository Service" "Gère les dépôts et les interactions avec GitHub." "Java 21, Spring Boot"
+            repositoryService = container "Repository Service" "Service Spring Boot ; expose actuellement un endpoint de santé." "Java 21, Spring Boot" {
+                healthController = component "HealthController" "Expose GET /api/v1/health et retourne le statut UP." "Spring MVC REST Controller"
 
-            aiOrchestrator = container "AI Orchestrator" "Coordonne les traitements IA." "Java 21, Spring Boot"
+                applicationEntryPoint = component "RepositoryServiceApplication" "Point d'entrée Spring Boot ; démarre le contexte applicatif." "Spring Boot"
 
-            contentService = container "Content Service" "Gère le contenu technique généré." "Java 21, Spring Boot"
-
-            publicationService = container "Publication Service" "Gère les opérations de publication du contenu." "Java 21, Spring Boot"
-
-            postgres = container "PostgreSQL" "Stockage relationnel de la plateforme, avec pgvector si nécessaire." "PostgreSQL 17, pgvector" {
-                tags "Database"
+                applicationEntryPoint -> healthController "Enregistre le contrôleur dans le contexte Spring"
             }
 
-            kafka = container "Kafka" "Transport asynchrone des événements entre services." "Apache Kafka" {
-                tags "Queue"
-            }
-        }
+            gateway = container "Gateway" "Point d'entrée HTTP de la plateforme. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+
+            aiOrchestrator = container "AI Orchestrator" "Orchestration des traitements IA. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+
+            contentService = container "Content Service" "Gestion des contenus techniques générés. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+
+            publicationService = container "Publication Service" "Gestion de la publication des contenus. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+
+                        postgres = container "PostgreSQL" "Stockage relationnel de la plateforme, avec pgvector si nécessaire." "PostgreSQL 17, pgvector" {
+                            tags "Database"
+                        }
+
+                        kafka = container "Kafka" "Transport asynchrone des événements entre services." "Apache Kafka" {
+                            tags "Queue"
+                        }
+                    }
 
         developer -> platform.gateway "Utilise" "HTTPS"
         developer -> github "Consulte et gère ses dépôts" "HTTPS"
@@ -61,6 +68,11 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
         }
 
         container platform "C2-Containers" "C2 - Conteneurs applicatifs et infrastructure" {
+            include *
+            autoLayout lr
+        }
+
+        component platform.repositoryService "C3-Repository-Service" "C3 - Composants du Repository Service" {
             include *
             autoLayout lr
         }

@@ -1,0 +1,39 @@
+{
+  "type": "record",
+  "name": "ContentGenerated",
+  "namespace": "io.developercontentcreator.contracts.content",
+  "doc": "Published when technical content generation is completed.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "io.developercontentcreator.contracts.common.EventMetadata"
+    },
+    {
+      "name": "contentId",
+      "type": "string"
+    },
+    {
+      "name": "repositoryId",
+      "type": "string"
+    },
+    {
+      "name": "contentType",
+      "type": "string"
+    },
+    {
+      "name": "language",
+      "type": "string"
+    },
+    {
+      "name": "status",
+      "type": "string"
+    },
+    {
+      "name": "generatedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

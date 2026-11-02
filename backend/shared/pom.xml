@@ -25,6 +25,8 @@
         <module>github-sdk</module>
         <module>ai-client</module>
         <module>test-support</module>
+        <module>event-contracts</module>
+
     </modules>
 
 </project>
