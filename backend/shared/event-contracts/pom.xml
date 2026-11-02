@@ -21,9 +21,12 @@
     <description>
         Centralized Avro event contracts shared between microservices.
     </description>
+
     <properties>
+        <!-- Avro contracts contain generated code without business tests. -->
         <jacoco.skip>true</jacoco.skip>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.avro</groupId>
@@ -55,10 +58,7 @@
                                 ${project.build.directory}/generated-sources/avro
                             </outputDirectory>
 
-                            <!--
-                              Compile EventMetadata before the
-                              event schemas that reference it.
-                            -->
+                            <!-- Compile EventMetadata before dependent event schemas. -->
                             <imports>
                                 <import>
                                     ${project.basedir}/src/main/avro/common/EventMetadata.avsc
