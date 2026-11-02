@@ -1,0 +1,104 @@
+name: Architecture Documentation
+
+on:
+  pull_request:
+    paths:
+      - "architecture/structurizr/**"
+      - "docs/architecture/c4/**"
+      - ".github/workflows/architecture-docs.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "architecture/structurizr/**"
+      - "docs/architecture/c4/**"
+      - ".github/workflows/architecture-docs.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-and-export:
+    name: Validate C4 model and diagrams
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Check architecture model
+        run: |
+          set -euo pipefail
+          test -f architecture/structurizr/workspace.dsl
+
+      - name: Download Structurizr
+        env:
+          STRUCTURIZR_VERSION: "2026.10.26"
+          STRUCTURIZR_SHA256: "495443517dc2186087c32c2eb6d762a9a265c8deabe509b072d49bea8d3049a4"
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RUNNER_TEMP/structurizr"
+
+          curl --fail --location --silent --show-error \
+            "https://download.structurizr.com/structurizr-${STRUCTURIZR_VERSION}.war" \
+            --output "$RUNNER_TEMP/structurizr/structurizr.war"
+
+          ACTUAL_SHA256="$(sha256sum "$RUNNER_TEMP/structurizr/structurizr.war" | cut -d ' ' -f 1)"
+
+          if [ "$ACTUAL_SHA256" != "$STRUCTURIZR_SHA256" ]; then
+            echo "::error::Structurizr SHA-256 mismatch"
+            echo "Expected: $STRUCTURIZR_SHA256"
+            echo "Actual:   $ACTUAL_SHA256"
+            exit 1
+          fi
+
+          echo "Structurizr $STRUCTURIZR_VERSION downloaded and verified."
+
+      - name: Validate architecture model
+        run: |
+          set -euo pipefail
+
+          java -jar "$RUNNER_TEMP/structurizr/structurizr.war" validate \
+            -workspace architecture/structurizr/workspace.dsl
+
+      - name: Export Mermaid diagrams
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RUNNER_TEMP/architecture-diagrams"
+
+          java -jar "$RUNNER_TEMP/structurizr/structurizr.war" export \
+            -workspace architecture/structurizr/workspace.dsl \
+            -format mermaid \
+            -output "$RUNNER_TEMP/architecture-diagrams"
+
+      - name: Compare generated diagrams
+        run: |
+          set -euo pipefail
+
+          diff -ru \
+            docs/architecture/c4/diagrams \
+            "$RUNNER_TEMP/architecture-diagrams"
+
+      - name: Upload generated diagrams
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: architecture-c4-diagrams
+          path: ${{ runner.temp }}/architecture-diagrams/
+          if-no-files-found: warn
+          retention-days: 7

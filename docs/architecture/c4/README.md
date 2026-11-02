@@ -1,0 +1,136 @@
+# Architecture C4 — Developer Content Creator
+
+## 1. Objectif
+
+Cette documentation décrit l'architecture de Developer Content Creator
+à l'aide du modèle C4.
+
+La plateforme analyse des dépôts GitHub et utilise l'intelligence
+artificielle pour générer du contenu technique, notamment des articles,
+des publications sur les réseaux sociaux, des notes de version et des
+newsletters.
+
+Le modèle Structurizr DSL constitue la source de vérité des diagrammes.
+
+## 2. Source du modèle architectural
+
+Le modèle est maintenu dans le fichier :
+
+`architecture/structurizr/workspace.dsl`
+
+Il définit les acteurs, les systèmes externes, les conteneurs applicatifs,
+les relations et les vues architecturales.
+
+Les diagrammes sont générés à partir de ce modèle. Ils ne doivent pas
+être modifiés manuellement.
+
+## 3. Architecture technique
+
+| Domaine | Technologie |
+|---|---|
+| Langage | Java 21 |
+| Framework | Spring Boot |
+| Build | Maven multi-modules |
+| Communication asynchrone | Apache Kafka |
+| Base de données | PostgreSQL |
+| Recherche vectorielle | pgvector |
+| Intelligence artificielle | Ollama / OpenAI |
+| Orchestration | Kubernetes |
+| Déploiement | Argo CD |
+| Documentation | C4 Model / Structurizr DSL |
+
+### Services applicatifs
+
+- `gateway` : point d'entrée de la plateforme.
+- `repository-service` : gestion des dépôts et intégration GitHub.
+- `ai-orchestrator` : orchestration des traitements IA.
+- `content-service` : gestion des contenus générés.
+- `publication-service` : gestion des opérations de publication.
+
+Les relations présentées dans les diagrammes doivent être vérifiées
+par rapport au code et à la configuration réels.
+
+### État d'implémentation des services
+
+Le diagramme C2 représente l'architecture cible de la plateforme. Tous les services qui y figurent ne sont pas nécessairement implémentés.
+
+| Service | État actuel | Documentation |
+|---|---|---|
+| gateway | Structure initiale, sans code source | C2 |
+| repository-service | Endpoint de santé implémenté | C2 + C3 |
+| ai-orchestrator | Structure initiale, sans code source | C2 |
+| content-service | Structure initiale, sans code source | C2 |
+| publication-service | Structure initiale, sans code source | C2 |
+
+Les diagrammes C3 seront créés lorsque les composants internes correspondants seront effectivement implémentés.
+
+## 4. Diagrammes C4 disponibles
+
+### C1 — System Context
+
+Fichier généré :
+
+[`structurizr-C1-System-Context.mmd`](diagrams/structurizr-C1-System-Context.mmd)
+
+Cette vue présente le système dans son environnement :
+- les utilisateurs ;
+- la plateforme ;
+- les systèmes externes ;
+- les principales interactions.
+
+### C2 — Containers
+
+Fichier généré :
+
+[`structurizr-C2-Containers.mmd`](diagrams/structurizr-C2-Containers.mmd)
+
+Cette vue présente les principaux services applicatifs et composants d'infrastructure :
+- le gateway ;
+- les services métier ;
+- PostgreSQL ;
+- Apache Kafka ;
+- les relations de communication.
+
+### C3 — Components
+
+Les diagrammes C3 décrivent les composants internes des services et leurs relations.
+
+#### Repository Service
+
+Fichier généré :
+
+[`C3-repository-service.mmd`](diagrams/C3-repository-service.mmd)
+
+Cette première vue C3 documente l'implémentation actuelle du `repository-service`.
+
+[Consulter le diagramme C3 — Repository Service](diagrams/C3-repository-service.mmd)
+
+Composants identifiés :
+- `RepositoryServiceApplication` : point d'entrée Spring Boot.
+- `HealthController` : expose l'endpoint `GET /api/v1/health`.
+
+> Le diagramme représente l'état actuel du code source. Les composants métier et les intégrations GitHub/Kafka seront ajoutés au fur et à mesure de leur implémentation.
+
+### Évolutions possibles
+
+Les vues suivantes pourront être ajoutées lorsque le besoin sera confirmé :
+
+- C3 — Components : composants internes d'un service.
+- Dynamic : scénarios d'interaction.
+- Deployment : infrastructure et déploiement Kubernetes.
+
+## 5. Arborescence
+
+```text
+architecture/
+└── structurizr/
+    └── workspace.dsl
+
+docs/
+└── architecture/
+    └── c4/
+        ├── README.md
+        ├── diagrams/
+        │   ├── structurizr-C1-System-Context.mmd
+        │   └── structurizr-C2-Containers.mmd
+        └── decisions/

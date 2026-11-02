@@ -1,0 +1,40 @@
+{
+  "type": "record",
+  "name": "RepositoryAnalyzed",
+  "namespace": "io.developercontentcreator.contracts.repository",
+  "doc": "Published when a GitHub repository analysis is completed.",
+  "fields": [
+    {
+      "name": "metadata",
+      "type": "io.developercontentcreator.contracts.common.EventMetadata"
+    },
+    {
+      "name": "repositoryId",
+      "type": "string"
+    },
+    {
+      "name": "repositoryUrl",
+      "type": "string"
+    },
+    {
+      "name": "defaultBranch",
+      "type": ["null", "string"],
+      "default": null
+    },
+    {
+      "name": "analysisId",
+      "type": "string"
+    },
+    {
+      "name": "analysisStatus",
+      "type": "string"
+    },
+    {
+      "name": "completedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      }
+    }
+  ]
+}

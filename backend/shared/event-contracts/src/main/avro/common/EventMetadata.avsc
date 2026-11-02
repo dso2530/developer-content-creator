@@ -1,0 +1,47 @@
+{
+  "type": "record",
+  "name": "EventMetadata",
+  "namespace": "io.developercontentcreator.contracts.common",
+  "doc": "Common metadata for integration events.",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique event identifier."
+    },
+    {
+      "name": "eventType",
+      "type": "string",
+      "doc": "Functional event type."
+    },
+    {
+      "name": "occurredAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event creation timestamp."
+    },
+    {
+      "name": "producer",
+      "type": "string",
+      "doc": "Name of the producing service."
+    },
+    {
+      "name": "subject",
+      "type": "string",
+      "doc": "Business resource identifier."
+    },
+    {
+      "name": "correlationId",
+      "type": "string",
+      "doc": "Distributed correlation identifier."
+    },
+    {
+      "name": "causationId",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Identifier of the event or command that caused this event."
+    }
+  ]
+}

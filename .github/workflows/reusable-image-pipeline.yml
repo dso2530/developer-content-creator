@@ -29,6 +29,12 @@ on:
         default: ""
         type: string
 
+      enforce_vulnerability_policy:
+        description: "Bloquer la publication si des vulnérabilités HIGH ou CRITICAL sont détectées"
+        required: false
+        default: true
+        type: boolean
+
 permissions:
   contents: read
 
@@ -321,6 +327,7 @@ jobs:
           test -s "reports/security/${SERVICE_NAME}-vulnerabilities.json"
 
       - name: Enforce vulnerability policy
+        if: inputs.enforce_vulnerability_policy
         env:
           SERVICE_NAME: ${{ inputs.service_name }}
         shell: bash
@@ -388,18 +395,13 @@ jobs:
           github.event_name == 'push' &&
           (
             github.ref == 'refs/heads/main' ||
+            github.ref == 'refs/heads/develop' ||
             startsWith(github.ref, format('refs/tags/{0}', inputs.release_tag_prefix))
           )
         ) ||
         (
           github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/main' &&
-          inputs.manual_version != ''
-        ) ||
-        (
-          github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/main' &&
-          inputs.manual_version == ''
+          github.ref == 'refs/heads/main'
         ) ||
         (
           github.event_name == 'schedule' &&

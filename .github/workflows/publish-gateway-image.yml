@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - develop
     tags:
       - "gateway-v*"
 
@@ -43,5 +44,6 @@ jobs:
       dockerfile_path: backend/gateway/Dockerfile
       release_tag_prefix: gateway-v
       manual_version: ${{ inputs.version || '' }}
+      enforce_vulnerability_policy: ${{ !(github.ref == 'refs/heads/develop' && inputs.version == '') }}
 
     secrets: inherit
