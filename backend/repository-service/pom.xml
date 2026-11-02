@@ -49,6 +49,16 @@
             <groupId>io.developercontentcreator</groupId>
             <artifactId>observability-starter</artifactId>
         </dependency>
+        <!-- Database migrations -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -69,11 +79,17 @@
             <artifactId>spring-boot-resttestclient</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.developercontentcreator</groupId>
+            <artifactId>security-starter</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-restclient</artifactId>
         </dependency>
     </dependencies>
+
 
     <build>
         <plugins>
