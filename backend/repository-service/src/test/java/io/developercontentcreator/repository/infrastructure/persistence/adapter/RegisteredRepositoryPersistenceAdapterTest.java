@@ -4,8 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.developercontentcreator.repository.application.exception.RepositoryAlreadyRegisteredException;
+import io.developercontentcreator.repository.domain.model.GitHubAccount;
+import io.developercontentcreator.repository.domain.model.GitHubAccountType;
+import io.developercontentcreator.repository.domain.model.GitHubInstallation;
 import io.developercontentcreator.repository.domain.model.RegisteredRepository;
 import io.developercontentcreator.repository.domain.model.RepositoryVisibility;
+import io.developercontentcreator.repository.infrastructure.persistence.entity.GitHubInstallationEntity;
+import io.developercontentcreator.repository.infrastructure.persistence.repository.SpringDataGitHubInstallationRepository;
 import io.developercontentcreator.repository.infrastructure.persistence.repository.SpringDataRegisteredRepositoryRepository;
 import java.net.URI;
 import java.util.UUID;
@@ -23,15 +28,22 @@ class RegisteredRepositoryPersistenceAdapterTest {
 
   @Autowired private SpringDataRegisteredRepositoryRepository repository;
 
-  @Autowired private SpringDataRegisteredRepositoryRepository registeredRepositoryRepository;
+  @Autowired private SpringDataGitHubInstallationRepository installationRepository;
 
   private UUID ownerId;
 
   @BeforeEach
   void cleanDatabase() {
-    registeredRepositoryRepository.deleteAll();
     repository.deleteAll();
+    installationRepository.deleteAll();
+
     ownerId = UUID.randomUUID();
+
+    GitHubInstallation installation =
+        new GitHubInstallation(
+            98765L, new GitHubAccount(123456L, "acme", GitHubAccountType.ORGANIZATION));
+
+    installationRepository.saveAndFlush(GitHubInstallationEntity.fromDomain(installation, ownerId));
   }
 
   @Test
