@@ -14,3 +14,10 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+
+developer-content-creator:
+  github:
+    webhook:
+      enabled: ${GITHUB_WEBHOOK_ENABLED:false}
+      secret: ${GITHUB_WEBHOOK_SECRET:}

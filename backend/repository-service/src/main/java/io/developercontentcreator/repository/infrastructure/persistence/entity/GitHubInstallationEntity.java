@@ -3,6 +3,7 @@ package io.developercontentcreator.repository.infrastructure.persistence.entity;
 import io.developercontentcreator.repository.domain.model.GitHubAccount;
 import io.developercontentcreator.repository.domain.model.GitHubAccountType;
 import io.developercontentcreator.repository.domain.model.GitHubInstallation;
+import io.developercontentcreator.repository.domain.model.GitHubInstallationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -32,6 +33,10 @@ public class GitHubInstallationEntity {
   @Column(name = "user_id", nullable = false)
   private UUID userId;
 
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
+  private GitHubInstallationStatus status;
+
   protected GitHubInstallationEntity() {
     // Required by JPA.
   }
@@ -45,6 +50,7 @@ public class GitHubInstallationEntity {
     entity.accountLogin = installation.account().login();
     entity.accountType = installation.account().type();
     entity.userId = userId;
+    entity.status = installation.status();
 
     return entity;
   }
@@ -52,6 +58,6 @@ public class GitHubInstallationEntity {
   public GitHubInstallation toDomain() {
     GitHubAccount account = new GitHubAccount(githubAccountId, accountLogin, accountType);
 
-    return new GitHubInstallation(installationId, account);
+    return new GitHubInstallation(installationId, account, status);
   }
 }

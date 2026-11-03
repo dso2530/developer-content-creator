@@ -23,9 +23,15 @@ class RegisteredRepositoryPersistenceAdapterTest {
 
   @Autowired private SpringDataRegisteredRepositoryRepository repository;
 
+  @Autowired private SpringDataRegisteredRepositoryRepository registeredRepositoryRepository;
+
+  private UUID ownerId;
+
   @BeforeEach
   void cleanDatabase() {
+    registeredRepositoryRepository.deleteAll();
     repository.deleteAll();
+    ownerId = UUID.randomUUID();
   }
 
   @Test
@@ -61,6 +67,7 @@ class RegisteredRepositoryPersistenceAdapterTest {
   @Test
   void shouldTranslateUniqueConstraintViolationIntoBusinessException() {
     RegisteredRepository first = createRepository(123456L, 98765L);
+
     RegisteredRepository duplicate =
         new RegisteredRepository(
             UUID.randomUUID(),
@@ -83,7 +90,6 @@ class RegisteredRepositoryPersistenceAdapterTest {
   }
 
   private RegisteredRepository createRepository(Long githubRepositoryId, Long installationId) {
-
     return new RegisteredRepository(
         UUID.randomUUID(),
         githubRepositoryId,

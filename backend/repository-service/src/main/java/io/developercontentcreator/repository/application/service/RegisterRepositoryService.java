@@ -1,5 +1,6 @@
 package io.developercontentcreator.repository.application.service;
 
+import io.developercontentcreator.repository.application.exception.GitHubInstallationInactiveException;
 import io.developercontentcreator.repository.application.exception.GitHubInstallationNotFoundException;
 import io.developercontentcreator.repository.application.exception.GitHubRepositoryNotAccessibleException;
 import io.developercontentcreator.repository.application.exception.RepositoryAlreadyRegisteredException;
@@ -39,6 +40,10 @@ public class RegisterRepositoryService implements RegisterRepositoryUseCase {
         installationPort
             .findByInstallationIdAndUserId(command.installationId(), command.requestedBy())
             .orElseThrow(() -> new GitHubInstallationNotFoundException(command.installationId()));
+
+    if (!installation.isActive()) {
+      throw new GitHubInstallationInactiveException(installation.installationId());
+    }
 
     GitHubRepositorySnapshot repository =
         repositoryPort
