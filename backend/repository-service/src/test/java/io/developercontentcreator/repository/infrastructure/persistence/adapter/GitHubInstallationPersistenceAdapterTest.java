@@ -7,6 +7,7 @@ import io.developercontentcreator.repository.domain.model.GitHubAccountType;
 import io.developercontentcreator.repository.domain.model.GitHubInstallation;
 import io.developercontentcreator.repository.infrastructure.persistence.entity.GitHubInstallationEntity;
 import io.developercontentcreator.repository.infrastructure.persistence.repository.SpringDataGitHubInstallationRepository;
+import io.developercontentcreator.repository.infrastructure.persistence.repository.SpringDataRegisteredRepositoryRepository;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,11 +23,16 @@ class GitHubInstallationPersistenceAdapterTest {
 
   @Autowired private SpringDataGitHubInstallationRepository repository;
 
+  @Autowired private SpringDataRegisteredRepositoryRepository registeredRepositoryRepository;
+
   private UUID ownerId;
 
   @BeforeEach
   void cleanDatabase() {
+    // Delete dependent entities before their referenced installations.
+    registeredRepositoryRepository.deleteAll();
     repository.deleteAll();
+
     ownerId = UUID.randomUUID();
   }
 
