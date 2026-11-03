@@ -30,4 +30,13 @@ class RepositoryServiceApplicationTest {
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody()).contains("\"status\":\"UP\"");
   }
+
+  @Test
+  void shouldRejectBusinessEndpointsWhenJwtIssuerIsNotConfigured() {
+    ResponseEntity<String> response =
+        restTemplate.getForEntity(
+            "http://localhost:" + port + "/api/v1/repositories", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+  }
 }
