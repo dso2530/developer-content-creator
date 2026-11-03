@@ -57,3 +57,7 @@ Thumbs.db
 
 # Locally generated security reports
 /reports/
+# Local Trivy reports
+*-sbom.cdx.json
+*-vulnerabilities.json
+*-vulnerabilities.txt

@@ -334,13 +334,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          trivy image \
-            --input "$IMAGE_ARCHIVE" \
-            --scanners vuln \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 \
-            --format table \
-            | tee "reports/security/${SERVICE_NAME}-vulnerabilities.txt"
+          REPORT="reports/security/${SERVICE_NAME}-vulnerabilities.json"
+          POLICY=".github/security/trivy-policy.json"
+          TEXT_REPORT="reports/security/${SERVICE_NAME}-vulnerabilities.txt"
+
+          test -s "$REPORT"
+          test -s "$POLICY"
+
+          python3 scripts/security/verify-trivy-policy.py \
+            --report "$REPORT" \
+            --policy "$POLICY" \
+            | tee "$TEXT_REPORT"
 
       - name: Calculate image archive checksum
         if: success()
