@@ -134,12 +134,87 @@ Le module `security-starter` dépend de Spring Security et des abstractions OAut
 
 Il ne dépend pas de `github-sdk`.
 
-Le module `github-sdk` conserve la responsabilité de l'authentification spécifique à GitHub App, notamment la génération des JWT d'application et la gestion des tokens d'installation.
+Le module `github-sdk` conserve la responsabilité de l'authentification spécifique à GitHub App, notamment :
 
-Les deux modules sont indépendants.
+- la gestion de la clé privée de l'application ;
+- la génération des JWT GitHub App ;
+- l'obtention et la gestion des jetons d'installation ;
+- l'authentification des appels à l'API GitHub.
+
+Les deux modules sont indépendants et répondent à des besoins d'authentification distincts.
+
+### 5.1 Séparation des mécanismes d'authentification
+
+Deux mécanismes d'authentification indépendants coexistent dans l'architecture DCC.
+
+**Authentification utilisateur DCC**
+
+Le `security-starter` exploite les JWT des utilisateurs pour fournir leur identité aux microservices.
+
+Cette identité permet notamment d'identifier l'utilisateur à l'origine d'une opération métier.
+
+**Authentification technique GitHub App**
+
+Le `github-sdk` gère les mécanismes d'authentification nécessaires aux interactions avec l'API GitHub.
+
+Cette authentification repose sur l'identité technique de l'application GitHub et sur les autorisations accordées à ses installations.
+
+Les JWT utilisateur DCC ne sont jamais utilisés pour authentifier directement les appels à l'API GitHub.
+
+### 5.2 Cycle d'authentification GitHub App
+
+Le `github-sdk` distingue deux types de jetons.
+
+**1. GitHub App JWT**
+
+Le JWT GitHub App est généré à partir de la clé privée de l'application.
+
+Il est signé avec l'algorithme RS256 et permet à l'application de s'authentifier auprès de GitHub pour les opérations autorisées au niveau de l'application.
+
+Il est notamment utilisé pour demander un jeton d'installation.
+
+**2. Installation Access Token**
+
+L'Installation Access Token est obtenu auprès de l'API GitHub pour une installation donnée.
+
+Il permet d'effectuer les opérations autorisées sur les ressources accessibles à cette installation, notamment les dépôts GitHub.
+
+Le cycle d'authentification est le suivant :
+
+```text
+          Clé privée GitHub App
+                   |
+                   v
+          GitHubAppJwtProvider
+                   |
+                   v
+          GitHub App JWT (RS256)
+                   |
+                   v
+              GitHub API
+                   |
+                   v
+ POST /app/installations/{installation_id}/access_tokens
+                   |
+                   v
+       Installation Access Token
+                   |
+                   v
+          GitHub REST API
+                   |
+                   v
+     Opérations autorisées sur les dépôts
+```
+
+Le JWT GitHub App et l'Installation Access Token ne sont pas interchangeables.
+
+Ils possèdent des usages, des périmètres d'autorisation et des durées de validité distincts.
+
+Le `github-sdk` est responsable de leur génération, de leur obtention et de leur gestion conformément aux exigences de l'API GitHub.
 
 ## 6. Historique
 
 | Version | Date | Description |
 |---|---|---|
 | 1.0 | 2026-11-02 | Création et acceptation de la décision |
+| 1.1 | 2026-11-02 | Précision de la séparation entre authentification utilisateur DCC et authentification technique GitHub App ; documentation du cycle JWT GitHub App et Installation Access Token |
