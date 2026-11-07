@@ -6,6 +6,30 @@ metadata:
 spec:
   project: default
   sources:
+    - repoURL: https://github.com/dso2530/platform-infrastructure.git
+      targetRevision: main
+      path: helm/charts/spring-boot-microservice
+      helm:
+        releaseName: developer-content-creator-repository-service-dev
+        valueFiles:
+          - $values/helm/environments/dev/common.yaml
+          - $values/helm/environments/dev/developer-content-creator/repository-service.yaml
+    - repoURL: https://github.com/dso2530/platform-infrastructure.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: developer-content-creator
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=trueapiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: developer-content-creator-repository-service-dev
+  namespace: argocd
+spec:
+  project: default
+  sources:
     - repoURL: https://github.com/dso2530/developer-content-creator.git
       targetRevision: develop
       path: deployment/helm/developer-content-creator
