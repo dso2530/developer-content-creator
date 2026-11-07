@@ -1,17 +1,39 @@
-{"properties": [
-  {
-    "name": "developer-content-creator.github.webhook.enabled",
-    "type": "java.lang.String",
-    "description": "A description for 'developer-content-creator.github.webhook.enabled'"
-  },
-  {
-    "name": "developer-content-creator.github.webhook.secret",
-    "type": "java.lang.String",
-    "description": "A description for 'developer-content-creator.github.webhook.secret'"
-  },
-  {
-    "name": "developer-content-creator.github.webhook.secret",
-    "type": "java.lang.String",
-    "description": "A description for 'developer-content-creator.github.webhook.secret'"
-  }
-]}
+{
+  "properties": [
+    {
+      "name": "developer-content-creator.github.webhook.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables GitHub webhook processing."
+    },
+    {
+      "name": "developer-content-creator.github.webhook.secret",
+      "type": "java.lang.String",
+      "description": "Secret used to validate GitHub webhook signatures."
+    },
+    {
+      "name": "developer-content-creator.logging.masking.enabled",
+      "type": "java.lang.Boolean",
+      "description": "Enables or disables sensitive information masking in application logs."
+    },
+    {
+      "name": "developer-content-creator.logging.masking.replacement",
+      "type": "java.lang.String",
+      "description": "Replacement text used for masked sensitive information."
+    },
+    {
+      "name": "developer-content-creator.logging.masking.mask-jwt",
+      "type": "java.lang.Boolean",
+      "description": "Enables masking of JWT values in application logs."
+    },
+    {
+      "name": "developer-content-creator.logging.masking.mask-email",
+      "type": "java.lang.Boolean",
+      "description": "Enables masking of email addresses in application logs."
+    },
+    {
+      "name": "developer-content-creator.logging.masking.mask-phone",
+      "type": "java.lang.Boolean",
+      "description": "Enables masking of phone numbers in application logs."
+    }
+  ]
+}

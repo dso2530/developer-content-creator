@@ -21,3 +21,16 @@ developer-content-creator:
     webhook:
       enabled: ${GITHUB_WEBHOOK_ENABLED:false}
       secret: ${GITHUB_WEBHOOK_SECRET:}
+
+  logging:
+    masking:
+      enabled: true
+      replacement: "[REDACTED]"
+      mask-jwt: true
+      mask-email: true
+      mask-phone: true
+
+logging:
+  structured:
+    format:
+      console: io.developercontentcreator.logging.formatter.SensitiveDataStructuredLogFormatter

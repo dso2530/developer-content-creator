@@ -109,6 +109,11 @@
             <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+    <groupId>io.developercontentcreator</groupId>
+    <artifactId>logging-starter</artifactId>
+</dependency>
     </dependencies>
 
 
