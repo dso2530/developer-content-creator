@@ -11,7 +11,9 @@ class LoggingAutoConfigurationTest {
 
   private final WebApplicationContextRunner contextRunner =
       new WebApplicationContextRunner()
-          .withConfiguration(AutoConfigurations.of(LoggingAutoConfiguration.class))
+          .withConfiguration(
+              AutoConfigurations.of(
+                  LoggingPropertiesAutoConfiguration.class, LoggingAutoConfiguration.class))
           .withPropertyValues("spring.main.web-application-type=servlet");
 
   @Test

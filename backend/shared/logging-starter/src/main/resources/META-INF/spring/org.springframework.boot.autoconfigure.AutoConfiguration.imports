@@ -1,1 +1,3 @@
 io.developercontentcreator.logging.auto.LoggingAutoConfiguration
+io.developercontentcreator.logging.auto.LoggingRestClientAutoConfiguration
+io.developercontentcreator.logging.auto.LoggingPropertiesAutoConfiguration
