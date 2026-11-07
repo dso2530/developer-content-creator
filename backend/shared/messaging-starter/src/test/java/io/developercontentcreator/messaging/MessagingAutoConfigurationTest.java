@@ -3,11 +3,13 @@ package io.developercontentcreator.messaging;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.developercontentcreator.messaging.config.MessagingProperties;
+import io.developercontentcreator.messaging.interceptor.CorrelationIdRecordInterceptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaConsumerFactoryCustomizer;
 import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.kafka.listener.RecordInterceptor;
 
 class MessagingAutoConfigurationTest {
 
@@ -127,11 +129,13 @@ class MessagingAutoConfigurationTest {
               assertThat(context).hasNotFailed();
               assertThat(context).doesNotHaveBean(DefaultKafkaProducerFactoryCustomizer.class);
               assertThat(context).doesNotHaveBean(DefaultKafkaConsumerFactoryCustomizer.class);
+              assertThat(context).doesNotHaveBean(CorrelationIdRecordInterceptor.class);
+              assertThat(context).doesNotHaveBean(RecordInterceptor.class);
             });
   }
 
   @Test
-  void shouldRegisterApicurioCustomizersAlongsideApplicationCustomizers() {
+  void shouldRegisterApicurioAndCorrelationCustomizersAlongsideApplicationCustomizers() {
     contextRunner
         .withBean(
             "applicationProducerCustomizer",
@@ -145,11 +149,21 @@ class MessagingAutoConfigurationTest {
             context -> {
               assertThat(context).hasNotFailed();
 
+              assertThat(context)
+                  .hasBean("apicurioProducerFactoryCustomizer")
+                  .hasBean("correlationIdProducerFactoryCustomizer")
+                  .hasBean("apicurioConsumerFactoryCustomizer")
+                  .hasBean("correlationIdRecordInterceptor");
+
               assertThat(context.getBeansOfType(DefaultKafkaProducerFactoryCustomizer.class))
-                  .hasSize(2);
+                  .hasSize(3);
 
               assertThat(context.getBeansOfType(DefaultKafkaConsumerFactoryCustomizer.class))
                   .hasSize(2);
+
+              assertThat(context).hasSingleBean(CorrelationIdRecordInterceptor.class);
+
+              assertThat(context).hasSingleBean(RecordInterceptor.class);
             });
   }
 }

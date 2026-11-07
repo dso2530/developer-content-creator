@@ -2,7 +2,9 @@ package io.developercontentcreator.messaging;
 
 import io.developercontentcreator.messaging.config.ApicurioConsumerFactoryCustomizer;
 import io.developercontentcreator.messaging.config.ApicurioProducerFactoryCustomizer;
+import io.developercontentcreator.messaging.config.CorrelationIdProducerFactoryCustomizer;
 import io.developercontentcreator.messaging.config.MessagingProperties;
+import io.developercontentcreator.messaging.interceptor.CorrelationIdRecordInterceptor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -13,6 +15,7 @@ import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryC
 import org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.listener.RecordInterceptor;
 
 @AutoConfiguration(before = KafkaAutoConfiguration.class)
 @ConditionalOnClass(KafkaTemplate.class)
@@ -36,5 +39,17 @@ public class MessagingAutoConfiguration {
   DefaultKafkaConsumerFactoryCustomizer apicurioConsumerFactoryCustomizer(
       MessagingProperties properties) {
     return new ApicurioConsumerFactoryCustomizer(properties);
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(CorrelationIdProducerFactoryCustomizer.class)
+  DefaultKafkaProducerFactoryCustomizer correlationIdProducerFactoryCustomizer() {
+    return new CorrelationIdProducerFactoryCustomizer();
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(CorrelationIdRecordInterceptor.class)
+  RecordInterceptor<Object, Object> correlationIdRecordInterceptor() {
+    return new CorrelationIdRecordInterceptor();
   }
 }

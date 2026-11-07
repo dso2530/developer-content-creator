@@ -1,6 +1,7 @@
 package io.developercontentcreator.messaging.contract;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.developercontentcreator.messaging.config.MessagingProperties;
 import java.util.List;
@@ -59,5 +60,38 @@ class MessagingConventionsTest {
     assertThat(MessagingArtifacts.CONTENT_GENERATED).isEqualTo(MessagingTopics.CONTENT_GENERATED);
 
     assertThat(MessagingArtifacts.CONTENT_PUBLISHED).isEqualTo(MessagingTopics.CONTENT_PUBLISHED);
+  }
+
+  @Test
+  void shouldPreventInstantiationOfMessagingArtifacts() throws Exception {
+    var constructor = MessagingArtifacts.class.getDeclaredConstructor();
+
+    constructor.setAccessible(true);
+
+    assertThatThrownBy(constructor::newInstance)
+        .hasCauseInstanceOf(UnsupportedOperationException.class)
+        .hasRootCauseMessage("Utility class");
+  }
+
+  @Test
+  void shouldPreventInstantiationOfMessagingTopics() throws Exception {
+    var constructor = MessagingTopics.class.getDeclaredConstructor();
+
+    constructor.setAccessible(true);
+
+    assertThatThrownBy(constructor::newInstance)
+        .hasCauseInstanceOf(UnsupportedOperationException.class)
+        .hasRootCauseMessage("Utility class");
+  }
+
+  @Test
+  void shouldPreventInstantiationOfMessagingRegistryGroups() throws Exception {
+    var constructor = MessagingRegistryGroups.class.getDeclaredConstructor();
+
+    constructor.setAccessible(true);
+
+    assertThatThrownBy(constructor::newInstance)
+        .hasCauseInstanceOf(UnsupportedOperationException.class)
+        .hasRootCauseMessage("Utility class");
   }
 }
