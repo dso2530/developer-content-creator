@@ -10,12 +10,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.kafka.autoconfigure.DefaultKafkaConsumerFactoryCustomizer;
-import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.boot.kafka.autoconfigure.KafkaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.listener.RecordInterceptor;
 
 @AutoConfiguration(before = KafkaAutoConfiguration.class)
 @ConditionalOnClass(KafkaTemplate.class)
@@ -29,27 +26,27 @@ public class MessagingAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(ApicurioProducerFactoryCustomizer.class)
-  DefaultKafkaProducerFactoryCustomizer apicurioProducerFactoryCustomizer(
+  ApicurioProducerFactoryCustomizer apicurioProducerFactoryCustomizer(
       MessagingProperties properties) {
     return new ApicurioProducerFactoryCustomizer(properties);
   }
 
   @Bean
   @ConditionalOnMissingBean(ApicurioConsumerFactoryCustomizer.class)
-  DefaultKafkaConsumerFactoryCustomizer apicurioConsumerFactoryCustomizer(
+  ApicurioConsumerFactoryCustomizer apicurioConsumerFactoryCustomizer(
       MessagingProperties properties) {
     return new ApicurioConsumerFactoryCustomizer(properties);
   }
 
   @Bean
   @ConditionalOnMissingBean(CorrelationIdProducerFactoryCustomizer.class)
-  DefaultKafkaProducerFactoryCustomizer correlationIdProducerFactoryCustomizer() {
+  CorrelationIdProducerFactoryCustomizer correlationIdProducerFactoryCustomizer() {
     return new CorrelationIdProducerFactoryCustomizer();
   }
 
   @Bean
   @ConditionalOnMissingBean(CorrelationIdRecordInterceptor.class)
-  RecordInterceptor<Object, Object> correlationIdRecordInterceptor() {
+  CorrelationIdRecordInterceptor<?, ?> correlationIdRecordInterceptor() {
     return new CorrelationIdRecordInterceptor();
   }
 }

@@ -7,14 +7,13 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.listener.RecordInterceptor;
 
-public class CorrelationIdRecordInterceptor implements RecordInterceptor<Object, Object> {
+public class CorrelationIdRecordInterceptor<K, V> implements RecordInterceptor<K, V> {
 
   private final ThreadLocal<Deque<CorrelationContext.Scope>> scopes =
       ThreadLocal.withInitial(ArrayDeque::new);
 
   @Override
-  public ConsumerRecord<Object, Object> intercept(
-      ConsumerRecord<Object, Object> record, Consumer<Object, Object> consumer) {
+  public ConsumerRecord<K, V> intercept(ConsumerRecord<K, V> record, Consumer<K, V> consumer) {
 
     String correlationId =
         CorrelationIdHeaders.read(record.headers().lastHeader(CorrelationIdHeaders.HEADER_NAME));
@@ -28,8 +27,7 @@ public class CorrelationIdRecordInterceptor implements RecordInterceptor<Object,
   }
 
   @Override
-  public void afterRecord(
-      ConsumerRecord<Object, Object> record, Consumer<Object, Object> consumer) {
+  public void afterRecord(ConsumerRecord<K, V> record, Consumer<K, V> consumer) {
 
     Deque<CorrelationContext.Scope> currentScopes = scopes.get();
 

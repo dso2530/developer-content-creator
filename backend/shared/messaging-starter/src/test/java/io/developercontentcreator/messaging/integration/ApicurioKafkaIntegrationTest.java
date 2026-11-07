@@ -4,12 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.developercontentcreator.contracts.common.EventMetadata;
 import io.developercontentcreator.contracts.content.ContentGenerated;
+import io.developercontentcreator.logging.context.CorrelationContext;
 import io.developercontentcreator.messaging.config.ApicurioConsumerFactoryCustomizer;
 import io.developercontentcreator.messaging.config.ApicurioProducerFactoryCustomizer;
+import io.developercontentcreator.messaging.config.CorrelationIdProducerFactoryCustomizer;
 import io.developercontentcreator.messaging.config.MessagingProperties;
 import io.developercontentcreator.messaging.contract.MessagingArtifacts;
 import io.developercontentcreator.messaging.contract.MessagingRegistryGroups;
 import io.developercontentcreator.messaging.contract.MessagingTopics;
+import io.developercontentcreator.messaging.interceptor.CorrelationIdHeaders;
+import io.developercontentcreator.messaging.interceptor.CorrelationIdRecordInterceptor;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -134,6 +139,7 @@ class ApicurioKafkaIntegrationTest {
         new DefaultKafkaProducerFactory<>(producerProperties);
 
     new ApicurioProducerFactoryCustomizer(properties).customize(producerFactory);
+    new CorrelationIdProducerFactoryCustomizer().customize(producerFactory);
 
     Map<String, Object> consumerProperties = new HashMap<>();
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
@@ -170,6 +176,7 @@ class ApicurioKafkaIntegrationTest {
     }
 
     AtomicInteger attempts = new AtomicInteger();
+    List<String> observedCorrelationIds = new CopyOnWriteArrayList<>();
 
     DeadLetterPublishingRecoverer recoverer =
         new DeadLetterPublishingRecoverer(
@@ -192,12 +199,15 @@ class ApicurioKafkaIntegrationTest {
     containerProperties.setMessageListener(
         (MessageListener<String, ContentGenerated>)
             record -> {
+              observedCorrelationIds.add(CorrelationContext.getCorrelationId());
               attempts.incrementAndGet();
               throw new IllegalStateException("Simulated processing failure");
             });
 
     KafkaMessageListenerContainer<String, ContentGenerated> container =
         new KafkaMessageListenerContainer<>(listenerConsumerFactory, containerProperties);
+
+    container.setRecordInterceptor(new CorrelationIdRecordInterceptor<String, ContentGenerated>());
 
     container.setCommonErrorHandler(errorHandler);
 
@@ -254,9 +264,12 @@ class ApicurioKafkaIntegrationTest {
         KafkaTemplate<String, ContentGenerated> kafkaTemplate =
             new KafkaTemplate<>(producerFactory);
 
-        kafkaTemplate
-            .send(sourceTopic, event.getContentId().toString(), event)
-            .get(10, TimeUnit.SECONDS);
+        try (CorrelationContext.Scope ignored = CorrelationContext.open("correlation-retry")) {
+
+          kafkaTemplate
+              .send(sourceTopic, event.getContentId().toString(), event)
+              .get(10, TimeUnit.SECONDS);
+        }
 
         ConsumerRecord<String, ContentGenerated> dltRecord = null;
 
@@ -274,9 +287,20 @@ class ApicurioKafkaIntegrationTest {
 
         assertThat(attempts.get()).as("Initial delivery plus three retries").isEqualTo(4);
 
+        assertThat(observedCorrelationIds)
+            .as("Correlation ID available during each listener invocation")
+            .hasSize(4)
+            .containsOnly("correlation-retry");
+
         assertThat(dltRecord.topic()).isEqualTo(deadLetterTopic);
         assertThat(dltRecord.partition()).isEqualTo(0);
         assertThat(dltRecord.key()).isEqualTo("content-retry");
+
+        assertThat(
+                CorrelationIdHeaders.read(
+                    dltRecord.headers().lastHeader(CorrelationIdHeaders.HEADER_NAME)))
+            .as("Correlation ID propagated to the DLT after retries")
+            .isEqualTo("correlation-retry");
 
         ContentGenerated received = dltRecord.value();
 
@@ -312,6 +336,7 @@ class ApicurioKafkaIntegrationTest {
         new DefaultKafkaProducerFactory<>(producerProperties);
 
     new ApicurioProducerFactoryCustomizer(properties).customize(producerFactory);
+    new CorrelationIdProducerFactoryCustomizer().customize(producerFactory);
 
     Map<String, Object> consumerProperties = new HashMap<>();
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
@@ -389,8 +414,11 @@ class ApicurioKafkaIntegrationTest {
 
         ConsumerRecord<String, ContentGenerated> failedRecord =
             new ConsumerRecord<>(sourceTopic, 0, 42L, event.getContentId().toString(), event);
-        recoverer.accept(
-            failedRecord, null, new IllegalStateException("Simulated processing failure"));
+        try (CorrelationContext.Scope ignored = CorrelationContext.open("correlation-dlt")) {
+
+          recoverer.accept(
+              failedRecord, null, new IllegalStateException("Simulated processing failure"));
+        }
 
         var records = consumer.poll(Duration.ofSeconds(10));
 
@@ -401,6 +429,12 @@ class ApicurioKafkaIntegrationTest {
         assertThat(receivedRecord.topic()).isEqualTo(deadLetterTopic);
         assertThat(receivedRecord.partition()).isEqualTo(0);
         assertThat(receivedRecord.key()).isEqualTo("content-dlt");
+
+        assertThat(
+                CorrelationIdHeaders.read(
+                    receivedRecord.headers().lastHeader(CorrelationIdHeaders.HEADER_NAME)))
+            .as("Correlation ID propagated to the DLT")
+            .isEqualTo("correlation-dlt");
 
         ContentGenerated received = receivedRecord.value();
 
@@ -436,6 +470,7 @@ class ApicurioKafkaIntegrationTest {
         new DefaultKafkaProducerFactory<>(producerProperties);
 
     new ApicurioProducerFactoryCustomizer(properties).customize(producerFactory);
+    new CorrelationIdProducerFactoryCustomizer().customize(producerFactory);
 
     Map<String, Object> consumerProperties = new HashMap<>();
     consumerProperties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKA.getBootstrapServers());
@@ -500,7 +535,12 @@ class ApicurioKafkaIntegrationTest {
 
         assertThat(consumer.assignment()).as("Kafka consumer partition assignment").isNotEmpty();
 
-        kafkaTemplate.send(TOPIC, event.getContentId().toString(), event).get(10, TimeUnit.SECONDS);
+        try (CorrelationContext.Scope ignored = CorrelationContext.open("correlation-123")) {
+
+          kafkaTemplate
+              .send(TOPIC, event.getContentId().toString(), event)
+              .get(10, TimeUnit.SECONDS);
+        }
 
         var records = consumer.poll(Duration.ofSeconds(10));
 
@@ -509,6 +549,12 @@ class ApicurioKafkaIntegrationTest {
         var record = records.iterator().next();
 
         assertThat(record.key()).isEqualTo("content-123");
+
+        assertThat(
+                CorrelationIdHeaders.read(
+                    record.headers().lastHeader(CorrelationIdHeaders.HEADER_NAME)))
+            .as("Correlation ID propagated to the consumed record")
+            .isEqualTo("correlation-123");
 
         ContentGenerated received = record.value();
 
