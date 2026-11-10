@@ -73,6 +73,7 @@ class RepositoryWebhookDisabledSecurityIntegrationTest {
       return token ->
           Jwt.withTokenValue(token)
               .header("alg", "none")
+              .issuer("https://issuer.test")
               .subject("test-subject")
               .claim(
                   "dcc_user_id", UUID.fromString("11111111-1111-1111-1111-111111111111").toString())

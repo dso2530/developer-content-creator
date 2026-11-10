@@ -20,6 +20,7 @@
         <microsoft-kiota.version>1.9.1</microsoft-kiota.version>
         <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
         <bouncycastle.version>1.86</bouncycastle.version>
+        <platform-starters.version>2.1.0</platform-starters.version>
     </properties>
 
     <dependencyManagement>
@@ -109,9 +110,9 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>io.developercontentcreator</groupId>
-                <artifactId>security-starter</artifactId>
-                <version>${project.version}</version>
+                <groupId>com.dso2530.starters</groupId>
+                <artifactId>platform-security</artifactId>
+                <version>${platform-starters.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.developercontentcreator</groupId>
@@ -149,6 +150,32 @@
                 <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
+
+            <!-- Shared platform starters -->
+            <dependency>
+                <groupId>com.dso2530.starters</groupId>
+                <artifactId>platform-web</artifactId>
+                <version>${platform-starters.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dso2530.starters</groupId>
+                <artifactId>platform-observability</artifactId>
+                <version>${platform-starters.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dso2530.starters</groupId>
+                <artifactId>platform-messaging</artifactId>
+                <version>${platform-starters.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dso2530.starters</groupId>
+                <artifactId>platform-database</artifactId>
+                <version>${platform-starters.version}</version>
+            </dependency>
+
         </dependencies>
 
     </dependencyManagement>

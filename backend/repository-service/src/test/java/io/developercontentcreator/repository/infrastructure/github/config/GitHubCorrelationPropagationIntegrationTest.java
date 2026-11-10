@@ -9,18 +9,17 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
+import com.dso2530.starters.core.correlation.CorrelationContext;
+import com.dso2530.starters.web.autoconfigure.WebAutoConfiguration;
 import io.developercontentcreator.github.auth.GitHubAppJwtProvider;
 import io.developercontentcreator.github.client.GitHubInstallationTokenClientImpl;
 import io.developercontentcreator.github.config.GitHubAppProperties;
 import io.developercontentcreator.github.exception.GitHubApiException;
-import io.developercontentcreator.logging.auto.LoggingPropertiesAutoConfiguration;
-import io.developercontentcreator.logging.auto.LoggingRestClientAutoConfiguration;
-import io.developercontentcreator.logging.context.CorrelationContext;
 import java.net.URI;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.restclient.autoconfigure.RestClientAutoConfiguration;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.test.context.runner.WebApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -34,13 +33,10 @@ class GitHubCorrelationPropagationIntegrationTest {
 
   private static final String CORRELATION_ID = "test-correlation-123";
 
-  private final ApplicationContextRunner contextRunner =
-      new ApplicationContextRunner()
+  private final WebApplicationContextRunner contextRunner =
+      new WebApplicationContextRunner()
           .withConfiguration(
-              AutoConfigurations.of(
-                  RestClientAutoConfiguration.class,
-                  LoggingPropertiesAutoConfiguration.class,
-                  LoggingRestClientAutoConfiguration.class))
+              AutoConfigurations.of(RestClientAutoConfiguration.class, WebAutoConfiguration.class))
           .withUserConfiguration(TestConfiguration.class)
           .withBean(
               GitHubAppProperties.class,

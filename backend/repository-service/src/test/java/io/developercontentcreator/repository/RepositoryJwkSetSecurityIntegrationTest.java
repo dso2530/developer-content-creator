@@ -72,6 +72,7 @@ class RepositoryJwkSetSecurityIntegrationTest {
       return token ->
           Jwt.withTokenValue(token)
               .header("alg", "none")
+              .issuer("https://issuer.test")
               .subject("test-subject")
               .claim("dcc_user_id", TEST_USER_ID.toString())
               .issuedAt(Instant.now())
