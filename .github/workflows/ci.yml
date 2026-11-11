@@ -28,7 +28,7 @@ jobs:
     timeout-minutes: 30
     env:
       GITHUB_ACTOR: ${{ github.actor }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.PLATFORM_STARTERS_READ_TOKEN }}
 
 
     steps:
