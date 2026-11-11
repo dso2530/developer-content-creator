@@ -28,6 +28,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: gateway-image-${{ github.ref }}

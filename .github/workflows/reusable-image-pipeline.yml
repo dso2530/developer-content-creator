@@ -37,12 +37,16 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   verify:
     name: Verify ${{ inputs.service_name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout source
@@ -87,8 +91,11 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
           cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
 
       - name: Check Java formatting
         run: mvn -B -ntp spotless:check
