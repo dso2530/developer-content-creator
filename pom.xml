@@ -34,7 +34,13 @@
         <module>bom</module>
         <module>backend</module>
     </modules>
-
+    <repositories>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages - platform-starters</name>
+            <url>https://maven.pkg.github.com/dso2530/platform-starters</url>
+        </repository>
+    </repositories>
     <dependencyManagement>
 
         <dependencies>

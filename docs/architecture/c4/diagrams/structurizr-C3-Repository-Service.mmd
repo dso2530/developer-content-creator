@@ -1,0 +1,70 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Component View: Developer Content Creator - Repository Service"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    2["<div style='font-weight: bold'>GitHub</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Héberge les dépôts sources,<br />expose les API GitHub et<br />transmet les événements de<br />cycle de vie des<br />installations.</div>"]
+    style 2 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    subgraph 4 ["Developer Content Creator"]
+      style 4 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      subgraph 7 ["Repository Service"]
+        style 7 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+        10["<div style='font-weight: bold'>HealthController</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring MVC REST Controller]</div><div style='font-size: 80%; margin-top:10px'>Expose le endpoint de santé<br />du service.</div>"]
+        style 10 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        11["<div style='font-weight: bold'>GitHubWebhookController</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring MVC REST Controller]</div><div style='font-size: 80%; margin-top:10px'>Reçoit les webhooks GitHub et<br />contrôle leur authenticité<br />avant traitement.</div>"]
+        style 11 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        12["<div style='font-weight: bold'>GitHubWebhookSignatureValidator</div><div style='font-size: 70%; margin-top: 0px'>[Component: Java Security]</div><div style='font-size: 80%; margin-top:10px'>Vérifie la signature<br />HMAC-SHA256 des webhooks<br />GitHub.</div>"]
+        style 12 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        13["<div style='font-weight: bold'>RepositorySecurityConfiguration</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring Security]</div><div style='font-size: 80%; margin-top:10px'>Configure la sécurité HTTP,<br />JWT et les règles d'accès aux<br />endpoints.</div>"]
+        style 13 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        14["<div style='font-weight: bold'>RegisterRepositoryService</div><div style='font-size: 70%; margin-top: 0px'>[Component: Application Service]</div><div style='font-size: 80%; margin-top:10px'>Enregistre un dépôt GitHub<br />après vérification de<br />l'installation et de<br />l'absence de doublon.</div>"]
+        style 14 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        15["<div style='font-weight: bold'>ProcessGitHubWebhookService</div><div style='font-size: 70%; margin-top: 0px'>[Component: Application Service]</div><div style='font-size: 80%; margin-top:10px'>Traite les événements<br />installation.deleted avec<br />idempotence et transaction.</div>"]
+        style 15 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        16["<div style='font-weight: bold'>DeactivateGitHubInstallationService</div><div style='font-size: 70%; margin-top: 0px'>[Component: Application Service]</div><div style='font-size: 80%; margin-top:10px'>Expose le cas d'utilisation<br />de désactivation d'une<br />installation GitHub.</div>"]
+        style 16 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        17["<div style='font-weight: bold'>GitHubRepositoryHttpAdapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: HTTP Adapter]</div><div style='font-size: 80%; margin-top:10px'>Interroge l'API GitHub pour<br />récupérer les informations<br />d'un dépôt.</div>"]
+        style 17 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        18["<div style='font-weight: bold'>GitHubRepositoryDisabledAdapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: Conditional Adapter]</div><div style='font-size: 80%; margin-top:10px'>Fournit l'implémentation<br />alternative du port GitHub<br />lorsque l'intégration est<br />désactivée.</div>"]
+        style 18 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        19["<div style='font-weight: bold'>GitHubInstallationPersistenceAdapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: Persistence Adapter]</div><div style='font-size: 80%; margin-top:10px'>Charge et désactive les<br />installations GitHub.</div>"]
+        style 19 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        20["<div style='font-weight: bold'>RegisteredRepositoryPersistenceAdapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: Persistence Adapter]</div><div style='font-size: 80%; margin-top:10px'>Vérifie les doublons et<br />persiste les dépôts<br />enregistrés.</div>"]
+        style 20 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        21["<div style='font-weight: bold'>GitHubWebhookDeliveryPersistenceAdapter</div><div style='font-size: 70%; margin-top: 0px'>[Component: JDBC Persistence Adapter]</div><div style='font-size: 80%; margin-top:10px'>Enregistre les livraisons<br />webhook et garantit leur<br />traitement idempotent.</div>"]
+        style 21 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        8["<div style='font-weight: bold'>RepositoryServiceApplication</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring Boot]</div><div style='font-size: 80%; margin-top:10px'>Point d'entrée Spring Boot du<br />service.</div>"]
+        style 8 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        9["<div style='font-weight: bold'>ApplicationServiceConfiguration</div><div style='font-size: 70%; margin-top: 0px'>[Component: Spring Configuration]</div><div style='font-size: 80%; margin-top:10px'>Configure les services<br />applicatifs et leurs<br />dépendances.</div>"]
+        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+      end
+
+      5[("<div style='font-weight: bold'>PostgreSQL</div><div style='font-size: 70%; margin-top: 0px'>[Container: PostgreSQL 17, pgvector]</div><div style='font-size: 80%; margin-top:10px'>Stockage relationnel de la<br />plateforme, avec pgvector si<br />nécessaire.</div>")]
+      style 5 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    end
+
+    8-. "<div>Démarre et configure le<br />contexte applicatif</div><div style='font-size: 70%'></div>" .->9
+    9-. "<div>Configure</div><div style='font-size: 70%'></div>" .->14
+    9-. "<div>Configure</div><div style='font-size: 70%'></div>" .->15
+    9-. "<div>Configure</div><div style='font-size: 70%'></div>" .->16
+    13-. "<div>Configure les règles d'accès<br />HTTP</div><div style='font-size: 70%'></div>" .->10
+    13-. "<div>Configure les règles d'accès<br />HTTP au webhook</div><div style='font-size: 70%'></div>" .->11
+    11-. "<div>Vérifie la signature du<br />webhook</div><div style='font-size: 70%'></div>" .->12
+    11-. "<div>Transmet les événements<br />installation.deleted</div><div style='font-size: 70%'></div>" .->15
+    15-. "<div>Enregistre et marque les<br />livraisons</div><div style='font-size: 70%'></div>" .->21
+    15-. "<div>Demande la désactivation de<br />l'installation</div><div style='font-size: 70%'></div>" .->19
+    16-. "<div>Désactive l'installation</div><div style='font-size: 70%'></div>" .->19
+    14-. "<div>Vérifie l'installation</div><div style='font-size: 70%'></div>" .->19
+    14-. "<div>Récupère les informations du<br />dépôt</div><div style='font-size: 70%'></div>" .->17
+    14-. "<div>Utilise l'implémentation<br />alternative lorsque GitHub<br />est désactivé</div><div style='font-size: 70%'></div>" .->18
+    14-. "<div>Vérifie et enregistre le<br />dépôt</div><div style='font-size: 70%'></div>" .->20
+    19-. "<div>Persiste les installations</div><div style='font-size: 70%'></div>" .->5
+    20-. "<div>Persiste les dépôts</div><div style='font-size: 70%'></div>" .->5
+    21-. "<div>Persiste les livraisons<br />webhook</div><div style='font-size: 70%'></div>" .->5
+    17-. "<div>Interroge l'API GitHub</div><div style='font-size: 70%'></div>" .->2
+
+  end

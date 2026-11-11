@@ -14,3 +14,41 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+
+platform:
+  security:
+    enabled: true
+    user-id-claim: dcc_user_id
+    username-claim: preferred_username
+    authorities-claim: roles
+
+  observability:
+    logging:
+      masking:
+        enabled: true
+        replacement: "[REDACTED]"
+        mask-jwt: true
+        mask-email: true
+        mask-phone: true
+
+logging:
+  structured:
+    format:
+      console: com.dso2530.starters.observability.logging.SensitiveDataStructuredLogFormatter
+
+developer-content-creator:
+  github:
+    webhook:
+      enabled: ${GITHUB_WEBHOOK_ENABLED:false}
+      secret: ${GITHUB_WEBHOOK_SECRET:}

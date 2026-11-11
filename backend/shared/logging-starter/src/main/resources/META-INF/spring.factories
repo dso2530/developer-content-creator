@@ -1,0 +1,2 @@
+org.springframework.boot.logging.structured.StructuredLoggingJsonMembersCustomizer=\
+io.developercontentcreator.logging.masking.SensitiveDataLoggingJsonMembersCustomizer

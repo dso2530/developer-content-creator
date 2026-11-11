@@ -5,7 +5,7 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
     model {
         developer = person "Développeur" "Utilise la plateforme pour générer du contenu technique à partir de dépôts GitHub."
 
-        github = softwareSystem "GitHub" "Héberge les dépôts sources et expose les API GitHub." {
+        github = softwareSystem "GitHub" "Héberge les dépôts sources, expose les API GitHub et transmet les événements de cycle de vie des installations." {
             tags "External"
         }
 
@@ -15,41 +15,92 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
 
         platform = softwareSystem "Developer Content Creator" "Plateforme de génération de contenu technique à partir de dépôts logiciels." {
 
-
-            repositoryService = container "Repository Service" "Service Spring Boot ; expose actuellement un endpoint de santé." "Java 21, Spring Boot" {
-                healthController = component "HealthController" "Expose GET /api/v1/health et retourne le statut UP." "Spring MVC REST Controller"
-
-                applicationEntryPoint = component "RepositoryServiceApplication" "Point d'entrée Spring Boot ; démarre le contexte applicatif." "Spring Boot"
-
-                applicationEntryPoint -> healthController "Enregistre le contrôleur dans le contexte Spring"
+            postgres = container "PostgreSQL" "Stockage relationnel de la plateforme, avec pgvector si nécessaire." "PostgreSQL 17, pgvector" {
+                tags "Database"
             }
 
-            gateway = container "Gateway" "Point d'entrée HTTP de la plateforme. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+            kafka = container "Kafka" "Transport asynchrone des événements entre services." "Apache Kafka" {
+                tags "Queue"
+            }
 
-            aiOrchestrator = container "AI Orchestrator" "Orchestration des traitements IA. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+            repositoryService = container "Repository Service" "Gestion des dépôts GitHub, des installations et des webhooks GitHub." "Java 21, Spring Boot" {
 
-            contentService = container "Content Service" "Gestion des contenus techniques générés. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+                applicationEntryPoint = component "RepositoryServiceApplication" "Point d'entrée Spring Boot du service." "Spring Boot"
 
-            publicationService = container "Publication Service" "Gestion de la publication des contenus. Structure initiale, sans implémentation." "Java 21, Spring Boot"
+                applicationConfiguration = component "ApplicationServiceConfiguration" "Configure les services applicatifs et leurs dépendances." "Spring Configuration"
 
-                        postgres = container "PostgreSQL" "Stockage relationnel de la plateforme, avec pgvector si nécessaire." "PostgreSQL 17, pgvector" {
-                            tags "Database"
-                        }
+                healthController = component "HealthController" "Expose le endpoint de santé du service." "Spring MVC REST Controller"
 
-                        kafka = container "Kafka" "Transport asynchrone des événements entre services." "Apache Kafka" {
-                            tags "Queue"
-                        }
-                    }
+                webhookController = component "GitHubWebhookController" "Reçoit les webhooks GitHub et contrôle leur authenticité avant traitement." "Spring MVC REST Controller"
+
+                signatureValidator = component "GitHubWebhookSignatureValidator" "Vérifie la signature HMAC-SHA256 des webhooks GitHub." "Java Security"
+
+                securityConfiguration = component "RepositorySecurityConfiguration" "Configure la sécurité HTTP, JWT et les règles d'accès aux endpoints." "Spring Security"
+
+                registerRepositoryService = component "RegisterRepositoryService" "Enregistre un dépôt GitHub après vérification de l'installation et de l'absence de doublon." "Application Service"
+
+                processWebhookService = component "ProcessGitHubWebhookService" "Traite les événements installation.deleted avec idempotence et transaction." "Application Service"
+
+                deactivateInstallationService = component "DeactivateGitHubInstallationService" "Expose le cas d'utilisation de désactivation d'une installation GitHub." "Application Service"
+
+                githubRepositoryHttpAdapter = component "GitHubRepositoryHttpAdapter" "Interroge l'API GitHub pour récupérer les informations d'un dépôt." "HTTP Adapter"
+
+                githubRepositoryDisabledAdapter = component "GitHubRepositoryDisabledAdapter" "Fournit l'implémentation alternative du port GitHub lorsque l'intégration est désactivée." "Conditional Adapter"
+
+                installationPersistenceAdapter = component "GitHubInstallationPersistenceAdapter" "Charge et désactive les installations GitHub." "Persistence Adapter"
+
+                registeredRepositoryPersistenceAdapter = component "RegisteredRepositoryPersistenceAdapter" "Vérifie les doublons et persiste les dépôts enregistrés." "Persistence Adapter"
+
+                webhookDeliveryPersistenceAdapter = component "GitHubWebhookDeliveryPersistenceAdapter" "Enregistre les livraisons webhook et garantit leur traitement idempotent." "JDBC Persistence Adapter"
+
+                applicationEntryPoint -> applicationConfiguration "Démarre et configure le contexte applicatif"
+
+                applicationConfiguration -> registerRepositoryService "Configure"
+                applicationConfiguration -> processWebhookService "Configure"
+                applicationConfiguration -> deactivateInstallationService "Configure"
+
+                securityConfiguration -> healthController "Configure les règles d'accès HTTP"
+                securityConfiguration -> webhookController "Configure les règles d'accès HTTP au webhook"
+
+                webhookController -> signatureValidator "Vérifie la signature du webhook"
+                webhookController -> processWebhookService "Transmet les événements installation.deleted"
+
+                processWebhookService -> webhookDeliveryPersistenceAdapter "Enregistre et marque les livraisons"
+                processWebhookService -> installationPersistenceAdapter "Demande la désactivation de l'installation"
+
+                deactivateInstallationService -> installationPersistenceAdapter "Désactive l'installation"
+
+                registerRepositoryService -> installationPersistenceAdapter "Vérifie l'installation"
+                registerRepositoryService -> githubRepositoryHttpAdapter "Récupère les informations du dépôt"
+                registerRepositoryService -> githubRepositoryDisabledAdapter "Utilise l'implémentation alternative lorsque GitHub est désactivé"
+                registerRepositoryService -> registeredRepositoryPersistenceAdapter "Vérifie et enregistre le dépôt"
+
+                installationPersistenceAdapter -> postgres "Persiste les installations"
+                registeredRepositoryPersistenceAdapter -> postgres "Persiste les dépôts"
+                webhookDeliveryPersistenceAdapter -> postgres "Persiste les livraisons webhook"
+
+                githubRepositoryHttpAdapter -> github "Interroge l'API GitHub"
+            }
+
+            gateway = container "Gateway" "Point d'entrée HTTP de la plateforme. Structure initiale, sans implémentation métier." "Java 21, Spring Boot"
+
+            aiOrchestrator = container "AI Orchestrator" "Orchestration des traitements IA. Structure initiale, sans implémentation métier." "Java 21, Spring Boot"
+
+            contentService = container "Content Service" "Gestion des contenus techniques générés. Structure initiale, sans implémentation métier." "Java 21, Spring Boot"
+
+            publicationService = container "Publication Service" "Gestion de la publication des contenus. Structure initiale, sans implémentation métier." "Java 21, Spring Boot"
+        }
 
         developer -> platform.gateway "Utilise" "HTTPS"
         developer -> github "Consulte et gère ses dépôts" "HTTPS"
 
+        github -> platform.repositoryService "Envoie les webhooks d'installation" "HTTPS"
+        platform.repositoryService -> github "Consulte les dépôts via l'API GitHub" "HTTPS"
+
         platform.gateway -> platform.repositoryService "Transmet les requêtes relatives aux dépôts" "HTTP"
         platform.gateway -> platform.contentService "Transmet les requêtes de contenu" "HTTP"
 
-        platform.repositoryService -> github "Consulte les dépôts et leurs métadonnées" "HTTPS"
-        platform.repositoryService -> platform.postgres "Lit et écrit les données des dépôts" "SQL"
-        platform.repositoryService -> platform.kafka "Publie ou consomme les événements configurés" "Kafka protocol"
+        platform.repositoryService -> platform.postgres "Persiste les installations, dépôts et livraisons webhook" "SQL"
 
         platform.aiOrchestrator -> platform.kafka "Échange les événements de traitement" "Kafka protocol"
         platform.aiOrchestrator -> llmProvider "Demande la génération ou l'analyse de contenu" "API modèle de langage"
@@ -92,6 +143,11 @@ workspace "Developer Content Creator" "Architecture C4 de la plateforme de gén�
             element "Container" {
                 background #438dd5
                 color #ffffff
+            }
+
+            element "Component" {
+                background #85bbf0
+                color #000000
             }
 
             element "External" {

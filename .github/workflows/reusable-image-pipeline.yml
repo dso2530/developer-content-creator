@@ -37,12 +37,16 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 jobs:
   verify:
     name: Verify ${{ inputs.service_name }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      GITHUB_ACTOR: ${{ github.actor }}
+      GITHUB_TOKEN: ${{ secrets.PLATFORM_STARTERS_READ_TOKEN }}
 
     steps:
       - name: Checkout source
@@ -87,8 +91,11 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "21"
+          java-version: '21'
           cache: maven
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
 
       - name: Check Java formatting
         run: mvn -B -ntp spotless:check
@@ -251,12 +258,13 @@ jobs:
             printf 'commit_sha=%s\n' "$COMMIT_SHA"
             printf 'version_tag=%s\n' "${VERSION:+${IMAGE:+$IMAGE:$VERSION}}"
           } >> "$GITHUB_OUTPUT"
-
       - name: Build image with Podman
         env:
           SERVICE_NAME: ${{ inputs.service_name }}
           DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
           SHA_TAG: ${{ steps.tags.outputs.sha_tag }}
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.PLATFORM_STARTERS_READ_TOKEN }}
         shell: bash
         run: |
           set -euo pipefail
@@ -269,8 +277,23 @@ jobs:
 
           echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_ENV"
 
+          if [[ -z "$GITHUB_TOKEN" ]]; then
+            echo "::error::PLATFORM_STARTERS_READ_TOKEN n'est pas configuré."
+            exit 1
+          fi
+
+          SECRET_DIR="$(mktemp -d "$RUNNER_TEMP/podman-secrets.XXXXXX")"
+          chmod 700 "$SECRET_DIR"
+          trap 'rm -rf "$SECRET_DIR"' EXIT
+
+          printf '%s' "$GITHUB_TOKEN" > "$SECRET_DIR/github_token"
+          printf '%s' "$GITHUB_ACTOR" > "$SECRET_DIR/github_actor"
+          chmod 600 "$SECRET_DIR/"*
+
           podman build \
             --pull=always \
+            --secret=id=github_token,src="$SECRET_DIR/github_token" \
+            --secret=id=github_actor,src="$SECRET_DIR/github_actor" \
             --tag "$IMAGE_TAG" \
             --file "$DOCKERFILE_PATH" \
             .
@@ -334,13 +357,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          trivy image \
-            --input "$IMAGE_ARCHIVE" \
-            --scanners vuln \
-            --severity HIGH,CRITICAL \
-            --exit-code 1 \
-            --format table \
-            | tee "reports/security/${SERVICE_NAME}-vulnerabilities.txt"
+          REPORT="reports/security/${SERVICE_NAME}-vulnerabilities.json"
+          POLICY=".github/security/trivy-policy.json"
+          TEXT_REPORT="reports/security/${SERVICE_NAME}-vulnerabilities.txt"
+
+          test -s "$REPORT"
+          test -s "$POLICY"
+
+          python3 scripts/security/verify-trivy-policy.py \
+            --report "$REPORT" \
+            --policy "$POLICY" \
+            | tee "$TEXT_REPORT"
 
       - name: Calculate image archive checksum
         if: success()

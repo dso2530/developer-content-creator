@@ -16,7 +16,35 @@
     <artifactId>repository-service</artifactId>
 
     <dependencies>
+        <!-- Shared platform security -->
+        <dependency>
+            <groupId>com.dso2530.starters</groupId>
+            <artifactId>platform-security</artifactId>
+        </dependency>
 
+        <!-- Service-owned HTTP security configuration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- OAuth2 Resource Server and JWT decoder auto-configuration -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+       <dependency>
+            <groupId>com.dso2530.starters</groupId>
+            <artifactId>platform-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.dso2530.starters</groupId>
+            <artifactId>platform-observability</artifactId>
+        </dependency>
+         <dependency>
+            <groupId>com.dso2530.starters</groupId>
+            <artifactId>platform-messaging</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
@@ -37,7 +65,7 @@
             <groupId>io.developercontentcreator</groupId>
             <artifactId>common</artifactId>
         </dependency>
-         <dependency>
+        <!-- <dependency>
             <groupId>io.developercontentcreator</groupId>
             <artifactId>logging-starter</artifactId>
          </dependency>
@@ -48,6 +76,17 @@
         <dependency>
             <groupId>io.developercontentcreator</groupId>
             <artifactId>observability-starter</artifactId>
+        </dependency>-->
+
+        <!-- Database migrations -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
         </dependency>
         <dependency>
             <groupId>org.postgresql</groupId>
@@ -69,11 +108,36 @@
             <artifactId>spring-boot-resttestclient</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-restclient</artifactId>
         </dependency>
+
+        <!-- Intégration Spring Boot / Testcontainers -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Intégration JUnit Jupiter -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Conteneur PostgreSQL -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+
     </dependencies>
+
 
     <build>
         <plugins>
