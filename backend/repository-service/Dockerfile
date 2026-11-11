@@ -7,16 +7,37 @@ FROM docker.io/library/maven:3.9.12-eclipse-temurin-21 AS builder
 
 WORKDIR /workspace
 
-# Copier le monorepo pour conserver tous les modules Maven
-# déclarés dans le POM racine.
+# Copier le monorepo pour conserver tous les modules Maven.
 COPY . .
 
 # Construire le service et ses dépendances Maven.
-RUN mvn -B -ntp \
-    -pl backend/repository-service \
-    -am \
-    -DskipTests \
-    clean package
+# Les credentials GitHub Packages sont montés temporairement
+# et ne sont pas conservés dans les couches de l'image.
+RUN --mount=type=secret,id=github_token \
+    --mount=type=secret,id=github_actor \
+    set -eu; \
+    umask 077; \
+    TOKEN="$(cat /run/secrets/github_token)"; \
+    ACTOR="$(cat /run/secrets/github_actor)"; \
+    SETTINGS_FILE="$(mktemp)"; \
+    trap 'rm -f "$SETTINGS_FILE"' EXIT; \
+    printf '%s\n' \
+      '<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">' \
+      '  <servers>' \
+      '    <server>' \
+      '      <id>github</id>' \
+      "      <username>${ACTOR}</username>" \
+      "      <password>${TOKEN}</password>" \
+      '    </server>' \
+      '  </servers>' \
+      '</settings>' \
+      > "$SETTINGS_FILE"; \
+    mvn -B -ntp \
+      --settings "$SETTINGS_FILE" \
+      -pl backend/repository-service \
+      -am \
+      -DskipTests \
+      clean package
 
 # --------------------------------------------------
 # Runtime stage
