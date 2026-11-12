@@ -428,7 +428,13 @@ jobs:
         ) ||
         (
           github.event_name == 'workflow_dispatch' &&
-          github.ref == 'refs/heads/main'
+          (
+            github.ref == 'refs/heads/main' ||
+            startsWith(
+              github.ref,
+              format('refs/tags/{0}', inputs.release_tag_prefix)
+            )
+          )
         ) ||
         (
           github.event_name == 'schedule' &&
